@@ -1,30 +1,53 @@
 #include <stdio.h>
+#include <string.h>
 
-int main(int n, char **args) {
-	FILE *source;
-	char *line = NULL, *result;
-	size_t len = 0;
-	ssize_t read;
+void decli(FILE *fp) {
+	char buffer[64];
+	fscanf(fp, "%s", buffer);
+	printf("%s\n", buffer);
+}
 
-	if (! args[1]) {
-		printf("Needs more arguments!\n");
+/*
+ * TODO: Change this for a hash table.
+ */
+void *search(char *buf) {
+	if (!strcmp(buf, "decli")) {
+		return decli;		
+	}
+
+	return NULL;
+}
+
+void lex(FILE *fp) {
+	char buffer[64];
+
+	fscanf(fp, "%s", buffer);
+	printf("%s\n", buffer);
+
+	void (*body)(FILE *) = search(buffer);
+	if (!body) {
+		printf("Invalid instruction\n");	
+		return;
+	}
+
+	body(fp);
+}
+
+int main(int argc, char *args[]) {
+	FILE *fp;
+
+	if (!args[1]) {
+		printf("Needs more arguments\n");
 		return 1;
 	}
 
-	source = fopen(args[1], "r");
-	
-	if (!source) {
-		printf("Error opening %s\n", args[1]);
+	fp = fopen(args[1], "r");
+	if (!fp) {
+		printf("Invalid file");
 		return 1;
 	}
 
-	result = "";
-
-	printf("Printing input file:\n");
-	printf("-----\n");
-	while (read = getline(&line, &len, source) != -1) {
-        printf("Retrieved: %s", line);
-	}
+	lex(fp);
 
 	return 0;
 }
