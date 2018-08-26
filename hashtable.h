@@ -1,7 +1,9 @@
+struct state_s;
+
 typedef struct {
 	char *label;
-	char cost;
-	char ope;
+	char opcode;
+	void (*body)(FILE *, struct state_s *);
 	void *next;
 } ht_item;
 
@@ -11,10 +13,10 @@ typedef struct {
 	ht_item **items;
 } hashtable;
 
-static hashtable *new_ht(unsigned int s);
-static void rm_ht(hashtable *ht);
+hashtable *new_ht(unsigned int s);
+void rm_ht(hashtable *ht);
 
-ht_item *new_ht_item(const char *label, const char val);
+ht_item *new_ht_item(char opcode, const char *label, void *body);
 void rm_ht_item(ht_item *item);
 
 unsigned long hash(unsigned char *str);

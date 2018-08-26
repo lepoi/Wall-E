@@ -1,78 +1,62 @@
 #include <stdio.h>
 #include <string.h>
-// #include "instructions.h"
-#include "hashtable.c"
-
-#define MAGIC_NUMBER "\x00\x45\x56\x41\x00\x00\x00\x00"
-
-struct state {
-	unsigned short data_size;
-	unsigned short exec_size; 
+#include <stdlib.h>
+#include "hashtable.h"
+struct state_s {
+	FILE *fp_out;
+	short data_size;
+	short exec_size;
+	hashtable *var_addrs;
+	hashtable *ins;
+	unsigned int line_number;
 };
+#include "instructions.h"
 
-void decli(FILE *fp, struct state *s) {
-	
-	s->data_size += 4;
-}
+#define MAGIC_NUMBER "\x00\x45\x56\x41\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
 
-/*
- * TODO: Change this for a hash table.
- */
-void *search(char *buf) {
-	if (!strcmp(buf, "decli")) {
-		return decli;		
-	}
+#define DECLARE_INS(set, opcode, label, body) \
+	hash_item(set, new_ht_item(opcode, label, body))	
 
-	return NULL;
-}
+#define DECLARE_VAR(set, var_name, addr) \
+	hash_item(set, new_ht_item(addr, var_name, NULL, 0));
 
-void lex(FILE *fp, FILE *fp_out, struct state *s) {
-	char buffer[64];
-	void (*body)(FILE *, struct state *);
-	int c = 0;
+void assemble(FILE *fp, struct state_s *s) {
+	char buffer[7];
+	ht_item *ins;
 
-	while ((c = fscanf(fp, "%s", buffer)) != -1) {
-		body = search(buffer);
+	while (fscanf(fp, "%s", buffer) != -1) {
+		ins = lookup_item(s->ins, buffer);
 
-		if (!body) {
+		if (!ins) {
 			printf("Invalid instruction\n");
 			return;
 		}
 
-		body(fp, s);
+		if (ins->opcode) {
+			fwrite(&ins->opcode, 1, 1, s->fp_out);
+		}
+
+		if (ins->body) {
+			ins->body(fp, s);
+		}
+
+		s->line_number++;
 	}
 }
 
 int main(int argc, char *args[]) {
-	FILE *fp, *fp_out;
-/*
-	hashtable *ht = new_ht(20);
-	ht_item *item = new_ht_item("PUSHI", 5);
-	hash_item(ht, item);
-	item = new_ht_item("PUSHD", 7);
-	hash_item(ht, item);
-	item = new_ht_item("PUSHC", 2);
-	hash_item(ht, item);
-	item = new_ht_item("PUSHS", 10);
-	hash_item(ht, item);
-	item = new_ht_item("WRTLN", 1);
-	hash_item(ht, item);
-	item = new_ht_item("WRTLN", 1);
-	hash_item(ht, item);
+	FILE *fp;
+	struct state_s s = {
+		.ins = new_ht(64),
+		.var_addrs = new_ht(64)
+	};
 
-	for (int i = 0; i < ht->size; i++) {
-		ht_item *item = ht->items[i];
-		
-		if (item) {
-			printf("%s -> %i\n", item->label, item->cost);
+	DECLARE_INS(s.ins, 0, "DCLI", dcli);
+	DECLARE_INS(s.ins, 1, "EXT", NULL);
+	DECLARE_INS(s.ins, 2, "PUSHI", var);
+	DECLARE_INS(s.ins, 14, "POPI", var);
+	DECLARE_INS(s.ins, 31, "RDI", NULL);
 
-			while (item->next) {
-				item = item->next;
-				printf("%s -> %i\n", item->label, item->cost);
-			}
-		}
-	}
-*/
 	if (!args[1]) {
 		printf("Needs more arguments\n");
 		return 1;
@@ -84,18 +68,16 @@ int main(int argc, char *args[]) {
 		return 1;
 	}
 	
-	fp_out = fopen("out.bin", "wb");
-	if (!fp_out) {
+	s.fp_out = fopen("out.bin", "wb");
+	if (!s.fp_out) {
 		printf("Could not create output file\n");
 	}
 
-	fwrite(MAGIC_NUMBER, sizeof(MAGIC_NUMBER) - 1, 1, fp_out);
-	
-	struct state s = {};
-	lex(fp, fp_out, &s);
+	fwrite(MAGIC_NUMBER, sizeof(MAGIC_NUMBER) - 1, 1, s.fp_out);
+	fwrite("\x00\x00", sizeof(addr_t), 2, s.fp_out);
+	assemble(fp, &s);
 
-	printf("data: %i, exec: %i\n", s.data_size, s.exec_size);
 	fclose(fp);
-	fclose(fp_out);
+	fclose(s.fp_out);
 	return 0;
 }

@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "hashtable.h"
 
@@ -23,10 +24,11 @@ void rm_ht(hashtable *ht) {
 	free(ht);
 }
 
-ht_item *new_ht_item(const char *label, const char val) {
+ht_item *new_ht_item(char opcode, const char *label, void *body) {
 	ht_item *item = malloc(sizeof(ht_item));
 	item->label = strdup(label);
-	item->cost = val;
+	item->opcode = opcode;
+	item->body = body;
 	item->next = NULL;
 	
 	return item;
@@ -34,13 +36,9 @@ ht_item *new_ht_item(const char *label, const char val) {
 
 void rm_ht_item(ht_item *item) {
 	free(item->label);
-	free(&item->cost);
-	free(&item->ope);
 	
 	if (item->next)
 		rm_ht_item(item->next);
-
-	free(item->next);
 }
 
 unsigned long hash(unsigned char *str) {
@@ -73,7 +71,7 @@ ht_item *lookup_item(hashtable *ht, char *label) {
 	ht_item *target = ht->items[index];
 
 	while (target) {
-		if (target->label == label)
+		if (strcmp(target->label, label) == 0)
 			break;
 		else 
 			target = target->next;
