@@ -7,6 +7,7 @@
 
 # Vim swap files
 *.swp
+*.swo
 
 # Testing files
 *.test
