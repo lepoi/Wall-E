@@ -2,17 +2,23 @@
 #include <string.h>
 #include <stdlib.h>
 #include "hashtable.h"
+
+typedef unsigned short addr_t;
+
 struct state_s {
 	FILE *fp_out;
-	short data_size;
-	short exec_size;
+	addr_t data_size;
+	addr_t exec_size;
 	hashtable *var_addrs;
 	hashtable *ins;
 	unsigned int line_number;
 };
+
 #include "instructions.h"
 
 #define MAGIC_NUMBER "\x00\x45\x56\x41\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+#define DATA_SEGMENT_OFFSET sizeof(MAGIC_NUMBER)
+#define DATA_SEGMENT_OFFSETT DATA_SEGMENT_OFFSET + sizeof(addr_t)
 
 #define DECLARE_INS(set, opcode, label, body) \
 	hash_item(set, new_ht_item(opcode, label, body))	
@@ -72,10 +78,18 @@ int main(int argc, char *args[]) {
 	if (!s.fp_out) {
 		printf("Could not create output file\n");
 	}
-
+	
+	// write magic number
 	fwrite(MAGIC_NUMBER, sizeof(MAGIC_NUMBER) - 1, 1, s.fp_out);
-	fwrite("\x00\x00", sizeof(addr_t), 2, s.fp_out);
+	// data and exec segment
+	fwrite("\x00\x00\x00\x00", 4, 1, s.fp_out);
+	printf("pos: %i\n", SEEK_CUR);
 	assemble(fp, &s);
+	printf("pos: %i\n", SEEK_CUR);
+
+	fseek(s.fp_out, sizeof(MAGIC_NUMBER), SEEK_SET);
+	fwrite(&s.data_size, sizeof(addr_t), 1, s.fp_out);
+	fwrite(&s.exec_size, sizeof(addr_t), 1, s.fp_out);
 
 	fclose(fp);
 	fclose(s.fp_out);

@@ -3,6 +3,10 @@
 
 # Unignore all with extensions
 !*.*
+!Makefile
+
+# Vim swap files
+*.swp
 
 # Testing files
 *.test
