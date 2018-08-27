@@ -1,4 +1,3 @@
-#define NEW_INS(name, opcode, args) \{name, opcode, args\}
 #define MAX_VAR_NAME_LENGTH 64
 
 char *consume_var(FILE *fp, struct state_s *s) {

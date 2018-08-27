@@ -74,7 +74,7 @@ int main(int argc, char *args[]) {
 		return 1;
 	}
 	
-	s.fp_out = fopen("out.bin", "wb");
+	s.fp_out = fopen("out.bin", "wb+");
 	if (!s.fp_out) {
 		printf("Could not create output file\n");
 	}
@@ -83,11 +83,9 @@ int main(int argc, char *args[]) {
 	fwrite(MAGIC_NUMBER, sizeof(MAGIC_NUMBER) - 1, 1, s.fp_out);
 	// data and exec segment
 	fwrite("\x00\x00\x00\x00", 4, 1, s.fp_out);
-	printf("pos: %i\n", SEEK_CUR);
 	assemble(fp, &s);
-	printf("pos: %i\n", SEEK_CUR);
 
-	fseek(s.fp_out, sizeof(MAGIC_NUMBER), SEEK_SET);
+	fseek(s.fp_out, sizeof(MAGIC_NUMBER) - 1, SEEK_SET);
 	fwrite(&s.data_size, sizeof(addr_t), 1, s.fp_out);
 	fwrite(&s.exec_size, sizeof(addr_t), 1, s.fp_out);
 
