@@ -29,4 +29,5 @@ void var(FILE *fp, struct state_s *s) {
 
 	addr_t addr = (addr_t) item->opcode;
 	fwrite(&addr, 2, 1, s->fp_out);
+	s->exec_size += sizeof(addr_t);
 }

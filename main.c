@@ -16,7 +16,7 @@ struct state_s {
 
 #include "instructions.h"
 
-#define MAGIC_NUMBER "\x00\x45\x56\x41\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+#define MAGIC_NUMBER "\x00\x45\x56\x41\x00\x00\x00\x00\x00\x00\x00\x32\x38\x32\x30\x32"
 #define DATA_SEGMENT_OFFSET sizeof(MAGIC_NUMBER)
 #define DATA_SEGMENT_OFFSETT DATA_SEGMENT_OFFSET + sizeof(addr_t)
 
@@ -40,6 +40,7 @@ void assemble(FILE *fp, struct state_s *s) {
 
 		if (ins->opcode) {
 			fwrite(&ins->opcode, 1, 1, s->fp_out);
+			s->exec_size += 1;
 		}
 
 		if (ins->body) {
@@ -54,7 +55,8 @@ int main(int argc, char *args[]) {
 	FILE *fp;
 	struct state_s s = {
 		.ins = new_ht(64),
-		.var_addrs = new_ht(64)
+		.var_addrs = new_ht(64),
+		.labels = new_ht(64)
 	};
 
 	DECLARE_INS(s.ins, 0, "DCLI", dcli);
