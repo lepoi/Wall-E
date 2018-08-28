@@ -1,7 +1,7 @@
 struct ht_item {
 	char *label;
 	char opcode;
-	void (*body)(FILE *, struct asm_state *);
+	char (*body)(FILE *, struct asm_state *);
 	void *next;
 };
 

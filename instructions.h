@@ -11,74 +11,84 @@ char *consume_var(FILE *fp, struct asm_state *state) {
 	return buffer;
 }
 
-void kint(FILE *fp, struct asm_state *state) {
+char kint(FILE *fp, struct asm_state *state) {
 	int buffer;
 
 	if (fscanf(fp, "%i", &buffer) != 1) {
 		printf("Expected constant int\n");
-		return;
+		return 1;
 	}
 
 	fwrite(&buffer, sizeof(buffer), 1, state->fp_out);
 	state->exec_size += sizeof(buffer);
+	return 0;
 }
 
-void kfloat(FILE *fp, struct asm_state *state) {
+char kfloat(FILE *fp, struct asm_state *state) {
 	float buffer;
 
 	if (fscanf(fp, "%f", &buffer) != 1) {
 		printf("Expected constant float\n");
-		return;
+		return 1;
 	}
 
 	fwrite(&buffer, sizeof(buffer), 1, state->fp_out);
 	state->exec_size += sizeof(buffer);
+	return 0;
 }
 
-void kchar(FILE *fp, struct asm_state *state) {
+char kchar(FILE *fp, struct asm_state *state) {
 	char buffer;
 
 	if (fscanf(fp, "%c", &buffer) != 1) {
 		printf("Expected constant long\n");
-		return;
+		return 1;
 	}
 
 	fwrite(&buffer, sizeof(buffer), 1, state->fp_out);
 	state->exec_size += sizeof(buffer);
+	return 0;
 }
 
-void kstring(FILE *fp, struct asm_state *state) {
+char kstring(FILE *fp, struct asm_state *state) {
 	char buffer[64];
 
 	if (fscanf(fp, "%s", buffer) != 1) {
 		printf("Expected constant string");
-		return;
+		return 1;
 	}
 
 	fwrite(&buffer, strlen(buffer), 1, state->fp_out);
 	state->exec_size += strlen(buffer);
+	return 0;
 }
 
-void dcli(FILE *fp, struct asm_state *state) {
+char dcli(FILE *fp, struct asm_state *state) {
 	char *var_name = consume_var(fp, state);
-	if (!var_name) {
-		return;
+	if (!var_name)
+		return 1;
+
+	if (lookup_item(state->var_addrs, var_name)) {
+		printf("Variable already declared -> \"%s\"\n", var_name);
+		return 1;
 	}
 
 	struct ht_item *item = new_ht_item(state->data_size, var_name, NULL);
 	state->data_size += 4;
 	hash_item(state->var_addrs, item);
+	return 0;
 }
 
-void var(FILE *fp, struct asm_state *state) {
+char var(FILE *fp, struct asm_state *state) {
 	char *var_name = consume_var(fp, state);
 	struct ht_item *item = lookup_item(state->var_addrs, var_name);
 	if (!item) {
 		printf("Variable not declared -> \"%s\"\n", var_name);
-		return;
+		return 1;
 	}
 
 	addr_t addr = (addr_t) item->opcode;
 	fwrite(&addr, 2, 1, state->fp_out);
 	state->exec_size += sizeof(addr_t);
+	return 0;
 }

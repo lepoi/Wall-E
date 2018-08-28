@@ -23,7 +23,7 @@ void assemble(FILE *fp, struct asm_state *s) {
 
 		if (!ins) {
 			printf("Invalid instruction -> \"%s\"\n", buffer);
-			return;
+			goto next;
 		}
 
 		if (ins->opcode) {
@@ -32,8 +32,12 @@ void assemble(FILE *fp, struct asm_state *s) {
 		}
 
 		if (ins->body)
-			ins->body(fp, s);
+			if (!ins->body(fp, s))
+				goto next;
 
+
+
+next:
 		s->line_number++;
 	}
 }

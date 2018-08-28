@@ -1,2 +1,5 @@
 DCLI a
-PUSHI ;
+PUSHI a
+DCLI a
+DCLI b
+PUSHI b
