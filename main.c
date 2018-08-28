@@ -49,7 +49,7 @@ int main(int argc, char *args[]) {
 	DECLARE_INS(state.ins, 0, "DCLI", dcli);
 	DECLARE_INS(state.ins, 1, "EXT", NULL);
 	DECLARE_INS(state.ins, 2, "PUSHI", var);
-	DECLARE_INS(state.ins, 3, "PUSHD", var);
+	DECLARE_INS(state.ins, 3, "PUSHF", var);
 	DECLARE_INS(state.ins, 4, "PUSHC", var);
 	DECLARE_INS(state.ins, 5, "PUSHS", var);
 	DECLARE_INS(state.ins, 6, "PUSHKI", kint);
@@ -57,7 +57,7 @@ int main(int argc, char *args[]) {
 	DECLARE_INS(state.ins, 8, "PUSHKC", kchar);
 	DECLARE_INS(state.ins, 9, "PUSHKS", NULL);
 	DECLARE_INS(state.ins, 10, "PUSHVI", NULL);
-	DECLARE_INS(state.ins, 11, "PUSHVD", NULL);
+	DECLARE_INS(state.ins, 11, "PUSHVF", NULL);
 	DECLARE_INS(state.ins, 12, "PUSHVC", NULL);
 	DECLARE_INS(state.ins, 13, "PUSHVS", NULL);
 	DECLARE_INS(state.ins, 14, "POPI", var);
@@ -70,13 +70,13 @@ int main(int argc, char *args[]) {
 	DECLARE_INS(state.ins, 21, "MOVX", var);
 	DECLARE_INS(state.ins, 22, "MOVXK", NULL);
 	DECLARE_INS(state.ins, 31, "RDI", NULL);
-	DECLARE_INS(state.ins, 32, "RDD", NULL);
+	DECLARE_INS(state.ins, 32, "RDF", NULL);
 	DECLARE_INS(state.ins, 33, "RDC", NULL);
 	DECLARE_INS(state.ins, 34, "RDS", NULL);
 	DECLARE_INS(state.ins, 35, "RDV", NULL);
 	DECLARE_INS(state.ins, 36, "WRTLN", NULL);
 	DECLARE_INS(state.ins, 37, "WRTI", NULL);
-	DECLARE_INS(state.ins, 38, "WRTD", NULL);
+	DECLARE_INS(state.ins, 38, "WRTF", NULL);
 	DECLARE_INS(state.ins, 39, "WRTC", NULL);
 	DECLARE_INS(state.ins, 40, "WRTS", NULL);
 	DECLARE_INS(state.ins, 41, "WRTM", NULL);
