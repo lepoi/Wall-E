@@ -31,9 +31,8 @@ void assemble(FILE *fp, struct asm_state *s) {
 			s->exec_size += 1;
 		}
 
-		if (ins->body) {
+		if (ins->body)
 			ins->body(fp, s);
-		}
 
 		s->line_number++;
 	}
@@ -53,16 +52,16 @@ int main(int argc, char *args[]) {
 	DECLARE_INS(state.ins, 3, "PUSHD", var);
 	DECLARE_INS(state.ins, 4, "PUSHC", var);
 	DECLARE_INS(state.ins, 5, "PUSHS", var);
-	DECLARE_INS(state.ins, 6, "PUSHKI", NULL);
-	DECLARE_INS(state.ins, 7, "PUSHKD", NULL);
-	DECLARE_INS(state.ins, 8, "PUSHKC", NULL);
+	DECLARE_INS(state.ins, 6, "PUSHKI", kint);
+	DECLARE_INS(state.ins, 7, "PUSHKF", kfloat);
+	DECLARE_INS(state.ins, 8, "PUSHKC", kchar);
 	DECLARE_INS(state.ins, 9, "PUSHKS", NULL);
 	DECLARE_INS(state.ins, 10, "PUSHVI", NULL);
 	DECLARE_INS(state.ins, 11, "PUSHVD", NULL);
 	DECLARE_INS(state.ins, 12, "PUSHVC", NULL);
 	DECLARE_INS(state.ins, 13, "PUSHVS", NULL);
 	DECLARE_INS(state.ins, 14, "POPI", var);
-	DECLARE_INS(state.ins, 15, "POPD", var);
+	DECLARE_INS(state.ins, 15, "POPF", var);
 	DECLARE_INS(state.ins, 16, "POPC", var);
 	DECLARE_INS(state.ins, 17, "POPS", var);
 	DECLARE_INS(state.ins, 18, "POPV", var);

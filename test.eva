@@ -1,6 +1,2 @@
-DCLI a
-PUSHI a
-DCLI b
-PUSHI b
-label:
-DCLI c
+PUSHKI 5
+PUSHKF 5.6

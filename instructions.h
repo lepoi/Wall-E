@@ -11,6 +11,46 @@ char *consume_var(FILE *fp, struct asm_state *state) {
 	return buffer;
 }
 
+void kint(FILE *fp, struct asm_state *state) {
+	int buffer;
+
+	if (fscanf(fp, "%i", &buffer) != 1) {
+		printf("Expected constant int\n");
+		return;
+	}
+
+	fwrite(&buffer, sizeof(buffer), 1, state->fp_out);
+	state->exec_size += sizeof(buffer);
+}
+
+void kfloat(FILE *fp, struct asm_state *state) {
+	float buffer;
+
+	if (fscanf(fp, "%f", &buffer) != 1) {
+		printf("Expected constant float\n");
+		return;
+	}
+
+	fwrite(&buffer, sizeof(buffer), 1, state->fp_out);
+	state->exec_size += sizeof(buffer);
+}
+
+void kchar(FILE *fp, struct asm_state *state) {
+	char buffer;
+
+	if (fscanf(fp, "%c", &buffer) != 1) {
+		printf("Expected constant long\n");
+		return;
+	}
+
+	fwrite(&buffer, sizeof(buffer), 1, state->fp_out);
+	state->exec_size += sizeof(buffer);
+}
+
+void kstring(FILE *fp, struct asm_state *state) {
+
+}
+
 void dcli(FILE *fp, struct asm_state *state) {
 	char *var_name = consume_var(fp, state);
 	if (!var_name) {
