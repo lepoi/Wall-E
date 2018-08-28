@@ -1,2 +1,2 @@
 all:
-	gcc main.c hashtable.c -o wall-e
+	gcc *.c -o wall-e

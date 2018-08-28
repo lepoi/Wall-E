@@ -2,3 +2,5 @@ DCLI a
 PUSHI a
 DCLI b
 PUSHI b
+label:
+DCLI c

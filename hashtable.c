@@ -1,31 +1,32 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-
+#include "types.h"
 #include "hashtable.h"
 
-hashtable *new_ht(unsigned int s) {
-	hashtable *ht = malloc(sizeof(hashtable));
+struct hashtable *new_ht(unsigned int s) {
+	struct hashtable *ht = malloc(sizeof(struct hashtable));
 	ht->size = s;
 	ht->count = 0;
-	ht->items = calloc((size_t)ht->size, sizeof(ht_item*));
+	ht->items = calloc((size_t) ht->size, sizeof(struct ht_item *));
 
 	return ht;
 }
 
-void rm_ht(hashtable *ht) {
+void rm_ht(struct hashtable *ht) {
 	for (int i = 0; i < ht->size; i++) {
-		ht_item *item = ht->items[i];
+		struct ht_item *item = ht->items[i];
 		
 		if (item)
 			rm_ht_item(item);
 	}
+
 	free(ht->items);
 	free(ht);
 }
 
-ht_item *new_ht_item(char opcode, const char *label, void *body) {
-	ht_item *item = malloc(sizeof(ht_item));
+struct ht_item *new_ht_item(char opcode, const char *label, void *body) {
+	struct ht_item *item = malloc(sizeof(struct ht_item));
 	item->label = strdup(label);
 	item->opcode = opcode;
 	item->body = body;
@@ -34,7 +35,7 @@ ht_item *new_ht_item(char opcode, const char *label, void *body) {
 	return item;
 }
 
-void rm_ht_item(ht_item *item) {
+void rm_ht_item(struct ht_item *item) {
 	free(item->label);
 	
 	if (item->next)
@@ -43,17 +44,17 @@ void rm_ht_item(ht_item *item) {
 
 unsigned long hash(unsigned char *str) {
 	unsigned long hash = 5381;
-    int c;
+    	int c;
 
-    while (c = *str++)
-        hash = ((hash << 5) + hash) + c;
+	while (c = *str++)
+		hash = ((hash << 5) + hash) + c;
 
-    return hash;
+	return hash;
 }
 
-void hash_item(hashtable *ht, ht_item *item) {
+void hash_item(struct hashtable *ht, struct ht_item *item) {
 	unsigned int index = hash(item->label) % ht->size;
-	ht_item *stop = ht->items[index];
+	struct ht_item *stop = ht->items[index];
 
 	if (!stop)
 		ht->items[index] = item;
@@ -63,12 +64,13 @@ void hash_item(hashtable *ht, ht_item *item) {
 
 		stop->next = item;
 	}
+
 	ht->count++;
 }
 
-ht_item *lookup_item(hashtable *ht, char *label) {
+struct ht_item *lookup_item(struct hashtable *ht, char *label) {
 	unsigned int index = hash(label) % ht->size;
-	ht_item *target = ht->items[index];
+	struct ht_item *target = ht->items[index];
 
 	while (target) {
 		if (strcmp(target->label, label) == 0)
@@ -76,5 +78,6 @@ ht_item *lookup_item(hashtable *ht, char *label) {
 		else 
 			target = target->next;
 	}
+
 	return target;
 }
