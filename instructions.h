@@ -48,7 +48,15 @@ void kchar(FILE *fp, struct asm_state *state) {
 }
 
 void kstring(FILE *fp, struct asm_state *state) {
+	char buffer[64];
 
+	if (fscanf(fp, "%s", buffer) != 1) {
+		printf("Expected constant string");
+		return;
+	}
+
+	fwrite(&buffer, strlen(buffer), 1, state->fp_out);
+	state->exec_size += strlen(buffer);
 }
 
 void dcli(FILE *fp, struct asm_state *state) {
@@ -65,6 +73,10 @@ void dcli(FILE *fp, struct asm_state *state) {
 void var(FILE *fp, struct asm_state *state) {
 	char *var_name = consume_var(fp, state);
 	struct ht_item *item = lookup_item(state->var_addrs, var_name);
+	if (!item) {
+		printf("Variable not declared -> \"%s\"\n", var_name);
+		return;
+	}
 
 	addr_t addr = (addr_t) item->opcode;
 	fwrite(&addr, 2, 1, state->fp_out);
