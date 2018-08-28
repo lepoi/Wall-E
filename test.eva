@@ -1,5 +1,3 @@
 DCLI a
-PUSHI a
-DCLI a
-DCLI b
-PUSHI b
+hola:
+DCLVC b 8

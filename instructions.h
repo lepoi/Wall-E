@@ -1,14 +1,87 @@
 #define MAX_VAR_NAME_LENGTH 64
 
-char *consume_var(FILE *fp, struct asm_state *state) {
+#define DECLARE_VAR(var_name, size)\
+	hash_item(state->var_addrs, new_ht_item(state->data_size, var_name, NULL));\
+	state->data_size += size
+
+static char *consume_var(FILE *fp, struct asm_state *state) {
 	char *buffer = (char *) malloc(MAX_VAR_NAME_LENGTH);
 
 	if (fscanf(fp, "%s", buffer) != 1) {
-		printf("Invalid argument on line %i, expected variable int\n", state->line_number);
+		printf("Invalid argument on line %i, expected variable\n", state->line_number);
 		return NULL;
 	}
 
 	return buffer;
+}
+
+char dcl_4(FILE *fp, struct asm_state *state) {
+	char *var_name = consume_var(fp, state);
+	if (!var_name)
+		return 1;
+
+	if (lookup_item(state->var_addrs, var_name)) {
+		printf("Variable already declared -> \"%s\"\n", var_name);
+		return 1;
+	}
+
+	DECLARE_VAR(var_name, 4);
+	return 0;
+}
+
+char dcl_1(FILE *fp, struct asm_state *state) {
+	char *var_name = consume_var(fp, state);
+	if (!var_name)
+		return 1;
+
+	if (lookup_item(state->var_addrs, var_name)) {
+		printf("Variable already declared -> \"%s\"\n", var_name);
+		return 1;
+	}
+
+	DECLARE_VAR(var_name, 1);
+	return 0;
+}
+
+char dclv_4(FILE *fp, struct asm_state *state) {
+	char *var_name = consume_var(fp, state);
+	if (!var_name)
+		return 1;
+
+	if (lookup_item(state->var_addrs, var_name)) {
+		printf("Variable already declared -> \"%s\"\n", var_name);
+		return 1;
+	}
+
+	int buffer;	
+	if (fscanf(fp, "%i", &buffer) != 1) {
+		printf("Int expected\n");
+		return 1;
+	}
+
+	DECLARE_VAR(var_name, buffer * 4);
+	return 0;
+}
+
+char dclv_1(FILE *fp, struct asm_state *state) {
+	char *var_name = consume_var(fp, state);
+	if (!var_name)
+		return 1;
+
+	if (lookup_item(state->var_addrs, var_name)) {
+		error_log(state->line_number, "Variable "C_BLU"%s"C_RST" already declared", var_name);
+		return 1;
+	}
+
+	int buffer;	
+	if (fscanf(fp, "%i", &buffer) != 1) {
+		error_log(state->line_number, "Expected int constant");
+		printf("Int expected\n");
+		return 1;
+	}
+
+	DECLARE_VAR(var_name, buffer);
+	return 0;
 }
 
 char kint(FILE *fp, struct asm_state *state) {
@@ -63,22 +136,6 @@ char kstring(FILE *fp, struct asm_state *state) {
 	return 0;
 }
 
-char dcli(FILE *fp, struct asm_state *state) {
-	char *var_name = consume_var(fp, state);
-	if (!var_name)
-		return 1;
-
-	if (lookup_item(state->var_addrs, var_name)) {
-		printf("Variable already declared -> \"%s\"\n", var_name);
-		return 1;
-	}
-
-	struct ht_item *item = new_ht_item(state->data_size, var_name, NULL);
-	state->data_size += 4;
-	hash_item(state->var_addrs, item);
-	return 0;
-}
-
 char var(FILE *fp, struct asm_state *state) {
 	char *var_name = consume_var(fp, state);
 	struct ht_item *item = lookup_item(state->var_addrs, var_name);
@@ -91,4 +148,8 @@ char var(FILE *fp, struct asm_state *state) {
 	fwrite(&addr, 2, 1, state->fp_out);
 	state->exec_size += sizeof(addr_t);
 	return 0;
+}
+
+char label(FILE *fp, struct asm_state *state) {
+	return 1;
 }

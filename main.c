@@ -2,24 +2,36 @@
 #include <string.h>
 #include <stdlib.h>
 #include "types.h"
+#include "messages.h"
 #include "hashtable.h"
 #include "instructions.h"
 
 #define MAGIC_NUMBER "\x00\x45\x56\x41\x00\x00\x00\x00\x00\x00\x00\x32\x38\x32\x30\x32"
 #define DATA_SEGMENT_OFFSET sizeof(MAGIC_NUMBER) - 1
 
-#define DECLARE_INS(set, opcode, label, body) \
-	hash_item(set, new_ht_item(opcode, label, body))	
+#define DECLARE_INS(set, opcode, label, body)\
+	hash_item(set, new_ht_item(opcode, label, body))
 
-#define DECLARE_VAR(set, var_name, addr) \
-	hash_item(set, new_ht_item(addr, var_name, NULL, 0));
+char declare_label(FILE *fp, struct asm_state *state, char *buffer) {
+	if (lookup_item(state->labels, buffer)) {
+		return 1;
+	}
+
+	hash_item(state->labels, new_ht_item(ftell(fp), buffer, NULL));
+	return 0;
+}
 
 void assemble(FILE *fp, struct asm_state *s) {
 	char buffer[7];
 	struct ht_item *ins;
 
-	while (fscanf(fp, "%s", buffer) != -1) {
+	while (fscanf(fp, "%s", buffer) > 0) {
 		ins = lookup_item(s->ins, buffer);
+
+		if (buffer[strlen(buffer) - 1] == ':') {
+			declare_label(fp, s, buffer);
+			goto next;
+		}
 
 		if (!ins) {
 			printf("Invalid instruction -> \"%s\"\n", buffer);
@@ -35,8 +47,6 @@ void assemble(FILE *fp, struct asm_state *s) {
 			if (!ins->body(fp, s))
 				goto next;
 
-
-
 next:
 		s->line_number++;
 	}
@@ -45,12 +55,24 @@ next:
 int main(int argc, char *args[]) {
 	FILE *fp;
 	struct asm_state state = {
+		.line_number = 1,
 		.ins = new_ht(64),
 		.var_addrs = new_ht(64),
 		.labels = new_ht(64)
 	};
 
-	DECLARE_INS(state.ins, 0, "DCLI", dcli);
+	/* 
+	 * Instructions with opcode 0 will not be written to the binary file, as they
+	 * are not read by the virtual machine.
+	*/
+	DECLARE_INS(state.ins, 0, "DCLI", dcl_4);
+	DECLARE_INS(state.ins, 0, "DCLF", dcl_4);
+	DECLARE_INS(state.ins, 0, "DCLC", dcl_1);
+	// DECLARE_INS(state.ins, 0, "DCLS", dcl_s);
+	DECLARE_INS(state.ins, 0, "DCLVI", dclv_4);
+	DECLARE_INS(state.ins, 0, "DCLVF", dclv_4);
+	DECLARE_INS(state.ins, 0, "DCLVC", dclv_1);
+	// DECLARE_INS(state.ins, 0, "DCLVS", dcl_vs);
 	DECLARE_INS(state.ins, 1, "EXT", NULL);
 	DECLARE_INS(state.ins, 2, "PUSHI", var);
 	DECLARE_INS(state.ins, 3, "PUSHF", var);
@@ -60,16 +82,16 @@ int main(int argc, char *args[]) {
 	DECLARE_INS(state.ins, 7, "PUSHKF", kfloat);
 	DECLARE_INS(state.ins, 8, "PUSHKC", kchar);
 	DECLARE_INS(state.ins, 9, "PUSHKS", kstring);
-	DECLARE_INS(state.ins, 10, "PUSHVI", NULL);
-	DECLARE_INS(state.ins, 11, "PUSHVF", NULL);
-	DECLARE_INS(state.ins, 12, "PUSHVC", NULL);
-	DECLARE_INS(state.ins, 13, "PUSHVS", NULL);
+	DECLARE_INS(state.ins, 10, "PUSHVI", var);
+	DECLARE_INS(state.ins, 11, "PUSHVF", var);
+	DECLARE_INS(state.ins, 12, "PUSHVC", var);
+	DECLARE_INS(state.ins, 13, "PUSHVS", var);
 	DECLARE_INS(state.ins, 14, "POPI", var);
 	DECLARE_INS(state.ins, 15, "POPF", var);
 	DECLARE_INS(state.ins, 16, "POPC", var);
 	DECLARE_INS(state.ins, 17, "POPS", var);
 	DECLARE_INS(state.ins, 18, "POPV", var);
-	DECLARE_INS(state.ins, 19, "POPX", NULL);
+	DECLARE_INS(state.ins, 19, "POPX", var);
 	DECLARE_INS(state.ins, 20, "POPXK", kint);
 	DECLARE_INS(state.ins, 21, "MOVX", var);
 	DECLARE_INS(state.ins, 22, "MOVXK", kint);
@@ -85,13 +107,13 @@ int main(int argc, char *args[]) {
 	DECLARE_INS(state.ins, 40, "WRTS", NULL);
 	DECLARE_INS(state.ins, 41, "WRTM", NULL);
 	DECLARE_INS(state.ins, 42, "WRTV", NULL);
-	DECLARE_INS(state.ins, 43, "JMP", NULL);
-	DECLARE_INS(state.ins, 44, "JPEQ", NULL);
-	DECLARE_INS(state.ins, 45, "JPNT", NULL);
-	DECLARE_INS(state.ins, 46, "JPGT", NULL);
-	DECLARE_INS(state.ins, 47, "JPGE", NULL);
-	DECLARE_INS(state.ins, 48, "JPLT", NULL);
-	DECLARE_INS(state.ins, 49, "JPLE", NULL);
+	DECLARE_INS(state.ins, 43, "JMP", label);
+	DECLARE_INS(state.ins, 44, "JPEQ", label);
+	DECLARE_INS(state.ins, 45, "JPNT", label);
+	DECLARE_INS(state.ins, 46, "JPGT", label);
+	DECLARE_INS(state.ins, 47, "JPGE", label);
+	DECLARE_INS(state.ins, 48, "JPLT", label);
+	DECLARE_INS(state.ins, 49, "JPLE", label);
 	DECLARE_INS(state.ins, 50, "ADD", NULL);
 	DECLARE_INS(state.ins, 51, "SUB", NULL);
 	DECLARE_INS(state.ins, 52, "MUL", NULL);
