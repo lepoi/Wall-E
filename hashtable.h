@@ -13,9 +13,10 @@ struct hashtable {
 
 struct hashtable *new_ht(unsigned int s);
 void rm_ht(struct hashtable *ht);
+static void rm_ht_helper(struct ht_item *item);
 
 struct ht_item *new_ht_item(char opcode, const char *label, void *body);
-void rm_ht_item(struct ht_item *item);
+unsigned short rm_ht_item(struct hashtable *ht, char *str);
 
 unsigned long hash(unsigned char *str);
 void hash_item(struct hashtable *ht, struct ht_item *item);

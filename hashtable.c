@@ -18,11 +18,18 @@ void rm_ht(struct hashtable *ht) {
 		struct ht_item *item = ht->items[i];
 		
 		if (item)
-			rm_ht_item(item);
+			rm_ht_helper(item);
 	}
 
 	free(ht->items);
 	free(ht);
+}
+
+void rm_ht_helper(struct ht_item *item) {
+	free(item->label);
+	
+	if (item->next)
+		rm_ht_helper(item->next);
 }
 
 struct ht_item *new_ht_item(char opcode, const char *label, void *body) {
@@ -35,11 +42,31 @@ struct ht_item *new_ht_item(char opcode, const char *label, void *body) {
 	return item;
 }
 
-void rm_ht_item(struct ht_item *item) {
-	free(item->label);
-	
-	if (item->next)
-		rm_ht_item(item->next);
+unsigned short rm_ht_item(struct hashtable *ht, char *str) {
+	struct ht_item *item = ht->items[hash(str) % ht->size];
+
+	if (item->label == str) {
+		ht->items[hash(str) % ht->size] = item->next;
+		free(item->label);
+
+		return 0;
+	}
+		
+	struct ht_item *helper = item->next;
+
+	while (item->next) {
+		if (item->label == str) {
+			helper->next = item->next;
+			free(item->label);
+
+			return 0;
+		}
+
+		item = item->next;
+		helper = helper->next;
+	}
+
+	return 1;
 }
 
 unsigned long hash(unsigned char *str) {
