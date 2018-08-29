@@ -45,7 +45,7 @@ struct ht_item *new_ht_item(char opcode, const char *label, void *body) {
 unsigned short rm_ht_item(struct hashtable *ht, char *str) {
 	struct ht_item *item = ht->items[hash(str) % ht->size];
 
-	if (item->label == str) {
+	if (strcmp(item->label, str) == 0) {
 		ht->items[hash(str) % ht->size] = item->next;
 		free(item->label);
 
