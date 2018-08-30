@@ -9,6 +9,7 @@ struct hashtable *new_ht(unsigned int s) {
 	ht->size = s;
 	ht->count = 0;
 	ht->items = calloc((size_t) ht->size, sizeof(struct ht_item *));
+	ht->list = NULL;
 
 	return ht;
 }
@@ -32,6 +33,45 @@ void rm_ht_helper(struct ht_item *item) {
 		rm_ht_helper(item->next);
 }
 
+void clean_list(struct list_item *l_item) {
+	if (l_item->next)
+		clean_list(l_item->next);
+
+	free(l_item->item->label);
+}
+
+void add_list_item(struct hashtable *ht, struct ht_item *item) {
+	struct list_item *add = malloc(sizeof(struct list_item));
+	
+	add->item = item;
+	add->next = ht->list;
+	ht->list = add;
+}
+
+void rm_list_item(struct hashtable *ht, struct ht_item *item) {
+	struct list_item *search = ht->list;
+
+	if (!search)
+		return;
+
+	if (search->item == item) {
+		ht->list = search->next;
+		return;
+	}
+
+	struct list_item *helper = ht->list;
+	search = search->next;
+
+	while (search) {
+		if (search->item == item) {
+			helper->next = search->next;
+			return;
+		}
+		search = search->next;
+		helper = helper->next;
+	}
+}
+
 struct ht_item *new_ht_item(char opcode, const char *label, void *body) {
 	struct ht_item *item = malloc(sizeof(struct ht_item));
 	item->label = strdup(label);
@@ -45,9 +85,11 @@ struct ht_item *new_ht_item(char opcode, const char *label, void *body) {
 unsigned short rm_ht_item(struct hashtable *ht, char *str) {
 	struct ht_item *item = ht->items[hash(str) % ht->size];
 
-	if (item->label == str) {
+	if (strcmp(item->label, str) == 0) {
 		ht->items[hash(str) % ht->size] = item->next;
+		rm_list_item(ht, item);
 		free(item->label);
+		ht->count--;
 
 		return 0;
 	}
@@ -55,9 +97,11 @@ unsigned short rm_ht_item(struct hashtable *ht, char *str) {
 	struct ht_item *helper = item->next;
 
 	while (item->next) {
-		if (item->label == str) {
+		if (strcmp(item->label, str) == 0) {
 			helper->next = item->next;
+			rm_list_item(ht, item);
 			free(item->label);
+			ht->count--;
 
 			return 0;
 		}
@@ -93,6 +137,7 @@ void hash_item(struct hashtable *ht, struct ht_item *item) {
 	}
 
 	ht->count++;
+	add_list_item(ht, item);
 }
 
 struct ht_item *lookup_item(struct hashtable *ht, char *label) {
