@@ -8,6 +8,7 @@
 # Vim swap files
 *.swp
 *.swo
+*.vscode
 
 # Testing files
 *.test
