@@ -22,10 +22,36 @@ void run(FILE *fp) {
 		switch (c) {
 			case '\x06': {
 				struct stack_item i = {};
-				i.type = 1;
+				i.type = 1; // push  k  int
+				printf("r: %i\n", fscanf(fp, "%c", &i.content.i));
+				stack[size++] = i; 
+			} break;
+			case '\x07': {
+				struct stack_item i = {};
+				i.type = 2;  // push k float
 				printf("r: %i\n", fscanf(fp, "%c", &i.content.i));
 				stack[size++] = i;
-			} break;
+			}break;
+			case '\x08': {
+				struct stack_item i = {};
+				i.type = 3; // push  k  char
+				printf("r: %i\n", fscanf(fp, "%c", &i.content.i));
+				stack[size++] = i;
+			}break;
+			/*
+			case '\x09':{
+				struct stack_item i = {};
+				i.type = 4; // push k string    aaaaaaa
+				printf("r: %i\n", fscanf(fp, "%c", &i.content.i));
+				stack[size++] = i;
+			}break;
+			case '\x10':{
+				struct stack_item i = {};
+				i.type = 5; //  push k vector integer
+				printf("r: %i\n", fscanf(fp, "%c", &i.content.i));
+				stack[size++] = i;
+			}break;
+			*/
 		}
 
 	} while (c != EOF);
