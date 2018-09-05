@@ -2,6 +2,10 @@
 
 #define MAX_STACK_SIZE 128
 
+#define TYPE_INT 1
+#define TYPE_DOUBLE 2
+#define TYPE_CHAR 3
+
 struct stack_item {
    char type;
    union {
@@ -18,24 +22,24 @@ void run(FILE *fp) {
 	fseek(fp, 20, SEEK_SET);
 	do {
 		c = fgetc(fp);
-		printf("c = %x\n", c);
 		switch (c) {
 			case '\x06': {
 				struct stack_item i = {};
-				i.type = 1; // push  k  int
-				printf("r: %i\n", fscanf(fp, "%c", &i.content.i));
+				i.type = TYPE_INT;
+				fread(&i.content.i, sizeof(int), 1, fp);
 				stack[size++] = i; 
 			} break;
 			case '\x07': {
 				struct stack_item i = {};
-				i.type = 2;  // push k float
-				printf("r: %i\n", fscanf(fp, "%c", &i.content.i));
+				i.type = TYPE_DOUBLE;
+				fread(&i.content.d, sizeof(float), 1, fp);
 				stack[size++] = i;
 			}break;
 			case '\x08': {
 				struct stack_item i = {};
-				i.type = 3; // push  k  char
-				printf("r: %i\n", fscanf(fp, "%c", &i.content.i));
+				i.type = TYPE_CHAR;
+				fread(&i.content.c, sizeof(char), 1, fp);
+				printf("char: %c\n", i.content.c);
 				stack[size++] = i;
 			}break;
 			/*
@@ -53,12 +57,26 @@ void run(FILE *fp) {
 			}break;
 			*/
 		}
-
 	} while (c != EOF);
-		printf("Stack contents:\n");
-		for (int i = 0; i < size; i++) {
-			printf("%i\n", stack[i].content.i);
+
+	printf("Stack contents:\n");
+	for (int i = 0; i < size; i++) {
+		printf("[%i] [%p] ", i, &stack[i]);
+		switch(stack[i].type) {
+			case TYPE_INT:
+				printf("%i", stack[i].content.i);
+			break;
+
+			case TYPE_DOUBLE:
+				printf("%lf", stack[i].content.d);
+			break;
+
+			case TYPE_CHAR:
+				printf("%c", stack[i].content.c);
+			break;
 		}
+		printf("\n");
+	}
 }
 
 int main (int argc, char **argv){

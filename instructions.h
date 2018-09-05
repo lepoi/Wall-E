@@ -106,20 +106,22 @@ char kfloat(FILE *fp, struct asm_state *state) {
 	}
 
 	fwrite(&buffer, sizeof(buffer), 1, state->fp_out);
+	printf("float: %f\n", buffer);
 	state->exec_size += sizeof(buffer);
 	return 0;
 }
 
 char kchar(FILE *fp, struct asm_state *state) {
-	char buffer;
+	char buffer[2];
 
-	if (fscanf(fp, "%c", &buffer) != 1) {
-		printf("Expected constant long\n");
+	if (fscanf(fp, "%s", buffer) != 1) {
+		printf("Expected constant char\n");
 		return 1;
 	}
 
-	fwrite(&buffer, sizeof(buffer), 1, state->fp_out);
-	state->exec_size += sizeof(buffer);
+	fwrite(&buffer[0], sizeof(char), 1, state->fp_out);
+	printf("char: %c\n", buffer[0]);
+	state->exec_size += sizeof(char);
 	return 0;
 }
 
