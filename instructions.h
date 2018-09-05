@@ -151,5 +151,11 @@ char var(FILE *fp, struct asm_state *state) {
 }
 
 char label(FILE *fp, struct asm_state *state) {
-	return 1;
+	char *label_name = consume_var(fp, state);
+	struct ht_item *item = lookup_item(state->labels, label_name);
+	if (!item) {
+		struct ht_item *add = new_ht_item(0, label_name, NULL);
+		hash_item(state->labels, add);
+	}
+	return 0;
 }

@@ -13,11 +13,17 @@
 	hash_item(state.ins, new_ht_item(opcode, label, body))
 
 char declare_label(FILE *fp, struct asm_state *state, char *buffer) {
-	if (lookup_item(state->labels, buffer)) {
-		error_log(state->line_number, "Label "C_BLU"%s"C_RST" already declared", buffer);
-		return 1;
+	struct ht_item *item = lookup_item(state->labels, buffer);
+	if (item) {
+		if (item->opcode != 0) {
+			error_log(state->line_number, "Label "C_BLU"%s"C_RST" already declared", buffer);
+			return 1;
+		}
+		else {
+			item->opcode = ftell(fp);
+			return 0;
+		}
 	}
-
 	hash_item(state->labels, new_ht_item(ftell(fp), buffer, NULL));
 	return 0;
 }
@@ -57,6 +63,7 @@ next:
 
 int main(int argc, char *args[]) {
 	FILE *fp;
+	char error = 0;
 	struct asm_state state = {
 		.line_number = 1,
 		.ins = new_ht(64),
@@ -135,23 +142,45 @@ int main(int argc, char *args[]) {
 		printf("Invalid file\n");
 		return 1;
 	}
-	
-	state.fp_out = fopen("out.bin", "wb+");
+
+	state.fp_out = fopen("temp.bin", "wb+");
 	if (!state.fp_out) {
 		printf("Could not create output file\n");
 	}
-	
+
 	// write magic number
 	fwrite(MAGIC_NUMBER, sizeof(MAGIC_NUMBER) - 1, 1, state.fp_out);
 	// data and exec segment
 	fwrite("\x00\x00\x00\x00", 4, 1, state.fp_out);
+
 	assemble(fp, &state);
+
+	struct list_item *list = state.labels->list;
+	while (list) {
+		if (list->item->opcode == 0) {
+			// print label name and/or address
+			printf("Invalid label found\n");
+			error = 1;
+		}
+		if (error)
+			break;
+
+		list = list->next;
+	}
+
 
 	fseek(state.fp_out, sizeof(MAGIC_NUMBER) - 1, SEEK_SET);
 	fwrite(&state.data_size, sizeof(addr_t), 1, state.fp_out);
 	fwrite(&state.exec_size, sizeof(addr_t), 1, state.fp_out);
-	
+
 	fclose(fp);
 	fclose(state.fp_out);
-	return 0;
+
+	if (!error)
+		if (rename("temp.bin", "out.bin"))
+			printf("Could not move temporary to final output file\n");
+	else 
+		remove("temp.bin");
+
+	return error;
 }

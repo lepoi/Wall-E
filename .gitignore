@@ -4,6 +4,7 @@
 # Unignore all with extensions
 !*.*
 !Makefile
+!*.bin
 
 # Vim swap files
 *.swp
