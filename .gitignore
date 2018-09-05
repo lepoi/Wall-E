@@ -4,10 +4,12 @@
 # Unignore all with extensions
 !*.*
 !Makefile
+!*.bin
 
 # Vim swap files
 *.swp
 *.swo
+*.vscode
 
 # Testing files
 *.test

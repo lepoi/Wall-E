@@ -13,11 +13,17 @@
 	hash_item(state.ins, new_ht_item(opcode, label, body))
 
 char declare_label(FILE *fp, struct asm_state *state, char *buffer) {
-	if (lookup_item(state->labels, buffer)) {
-		error_log(state->line_number, "Label "C_BLU"%s"C_RST" already declared", buffer);
-		return 1;
+	struct ht_item *item = lookup_item(state->labels, buffer);
+	if (item) {
+		if (item->opcode != 0) {
+			error_log(state->line_number, "Label "C_BLU"%s"C_RST" already declared", buffer);
+			return 1;
+		}
+		else {
+			item->opcode = ftell(fp);
+			return 0;
+		}
 	}
-
 	hash_item(state->labels, new_ht_item(ftell(fp), buffer, NULL));
 	return 0;
 }
@@ -57,6 +63,7 @@ next:
 
 int main(int argc, char *args[]) {
 	FILE *fp;
+	char error = 0;
 	struct asm_state state = {
 		.line_number = 1,
 		.ins = new_ht(64),
@@ -69,28 +76,28 @@ int main(int argc, char *args[]) {
 	 * are not read by the virtual machine.
 	*/
 	DECLARE_INSTRUCTION(0, "DCLI", dcl_4);
-	DECLARE_INSTRUCTION(0, "DCLF", dcl_4);
+	DECLARE_INSTRUCTION(0, "DCLA", dcl_4);
 	DECLARE_INSTRUCTION(0, "DCLC", dcl_1);
 	// DECLARE_INSTRUCTION(0, "DCLS", dcl_s);
 	DECLARE_INSTRUCTION(0, "DCLVI", dclv_4);
-	DECLARE_INSTRUCTION(0, "DCLVF", dclv_4);
+	DECLARE_INSTRUCTION(0, "DCLVA", dclv_4);
 	DECLARE_INSTRUCTION(0, "DCLVC", dclv_1);
 	// DECLARE_INSTRUCTION(0, "DCLVS", dcl_vs);
 	DECLARE_INSTRUCTION(1, "EXT", NULL);
 	DECLARE_INSTRUCTION(2, "PUSHI", var);
-	DECLARE_INSTRUCTION(3, "PUSHF", var);
+	DECLARE_INSTRUCTION(3, "PUSHD", var);
 	DECLARE_INSTRUCTION(4, "PUSHC", var);
 	DECLARE_INSTRUCTION(5, "PUSHS", var);
 	DECLARE_INSTRUCTION(6, "PUSHKI", kint);
-	DECLARE_INSTRUCTION(7, "PUSHKF", kfloat);
+	DECLARE_INSTRUCTION(7, "PUSHKD", kfloat);
 	DECLARE_INSTRUCTION(8, "PUSHKC", kchar);
 	//DECLARE_INSTRUCTION(9, "PUSHKS", kstring);
 	DECLARE_INSTRUCTION(10, "PUSHVI", var);
-	DECLARE_INSTRUCTION(11, "PUSHVF", var);
+	DECLARE_INSTRUCTION(11, "PUSHVD", var);
 	DECLARE_INSTRUCTION(12, "PUSHVC", var);
 	//DECLARE_INSTRUCTION(13, "PUSHVS", var);
 	DECLARE_INSTRUCTION(14, "POPI", var);
-	DECLARE_INSTRUCTION(15, "POPF", var);
+	DECLARE_INSTRUCTION(15, "POPD", var);
 	DECLARE_INSTRUCTION(16, "POPC", var);
 	DECLARE_INSTRUCTION(17, "POPS", var);
 	DECLARE_INSTRUCTION(18, "POPV", var);
@@ -99,13 +106,13 @@ int main(int argc, char *args[]) {
 	DECLARE_INSTRUCTION(21, "MOVX", var);
 	DECLARE_INSTRUCTION(22, "MOVXK", kint);
 	DECLARE_INSTRUCTION(31, "RDI", NULL);
-	DECLARE_INSTRUCTION(32, "RDF", NULL);
+	DECLARE_INSTRUCTION(32, "RDD", NULL);
 	DECLARE_INSTRUCTION(33, "RDC", NULL);
 	DECLARE_INSTRUCTION(34, "RDS", NULL);
 	DECLARE_INSTRUCTION(35, "RDV", NULL);
 	DECLARE_INSTRUCTION(36, "WRTLN", NULL);
 	DECLARE_INSTRUCTION(37, "WRTI", NULL);
-	DECLARE_INSTRUCTION(38, "WRTF", NULL);
+	DECLARE_INSTRUCTION(38, "WRTD", NULL);
 	DECLARE_INSTRUCTION(39, "WRTC", NULL);
 	DECLARE_INSTRUCTION(40, "WRTS", NULL);
 	DECLARE_INSTRUCTION(41, "WRTM", NULL);
@@ -135,23 +142,45 @@ int main(int argc, char *args[]) {
 		printf("Invalid file\n");
 		return 1;
 	}
-	
-	state.fp_out = fopen("out.bin", "wb+");
+
+	state.fp_out = fopen("temp.bin", "wb+");
 	if (!state.fp_out) {
 		printf("Could not create output file\n");
 	}
-	
+
 	// write magic number
 	fwrite(MAGIC_NUMBER, sizeof(MAGIC_NUMBER) - 1, 1, state.fp_out);
 	// data and exec segment
 	fwrite("\x00\x00\x00\x00", 4, 1, state.fp_out);
+
 	assemble(fp, &state);
+
+	struct list_item *list = state.labels->list;
+	while (list) {
+		if (list->item->opcode == 0) {
+			// print label name and/or address
+			printf("Invalid label found\n");
+			error = 1;
+		}
+		if (error)
+			break;
+
+		list = list->next;
+	}
+
 
 	fseek(state.fp_out, sizeof(MAGIC_NUMBER) - 1, SEEK_SET);
 	fwrite(&state.data_size, sizeof(addr_t), 1, state.fp_out);
 	fwrite(&state.exec_size, sizeof(addr_t), 1, state.fp_out);
-	
+
 	fclose(fp);
 	fclose(state.fp_out);
-	return 0;
+
+	if (!error)
+		if (rename("temp.bin", "out.bin"))
+			printf("Could not move temporary to final output file\n");
+	else 
+		remove("temp.bin");
+
+	return error;
 }
