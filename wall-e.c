@@ -20,11 +20,11 @@ char declare_label(FILE *fp, struct asm_state *state, char *buffer) {
 			return 1;
 		}
 		else {
-			item->opcode = ftell(fp);
+			item->opcode = ftell(state->fp_out);
 			return 0;
 		}
 	}
-	hash_item(state->labels, new_ht_item(ftell(fp), buffer, NULL));
+	hash_item(state->labels, new_ht_item(ftell(state->fp_out), buffer, NULL));
 	return 0;
 }
 
@@ -177,7 +177,7 @@ int main(int argc, char *args[]) {
 	fclose(state.fp_out);
 
 	if (!error)
-		if (rename("temp.bin", "out.bin"))
+		if (rename("temp.bin", "out.eva"))
 			printf("Could not move temporary to final output file\n");
 	else 
 		remove("temp.bin");

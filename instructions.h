@@ -158,6 +158,11 @@ char label(FILE *fp, struct asm_state *state) {
 	if (!item) {
 		struct ht_item *add = new_ht_item(0, label_name, NULL);
 		hash_item(state->labels, add);
+		return 0;
 	}
+
+	addr_t addr = (addr_t) item->opcode;
+	fwrite(&addr, 2, 1, state->fp_out);
+	state->exec_size += sizeof(addr_t);
 	return 0;
 }

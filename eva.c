@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #define MAX_STACK_SIZE 128
 
@@ -7,8 +8,8 @@
 #define TYPE_CHAR 3
 
 struct stack_item {
-   char type;
-   union {
+	char type;
+	union {
        int i;
        double d;
        char c;
@@ -16,10 +17,12 @@ struct stack_item {
    } content;
 } stack[MAX_STACK_SIZE];
 
+typedef unsigned short addr_t;
+    
 void run(FILE *fp) {
 	char c;
 	int size = 0;
-	fseek(fp, 20, SEEK_SET);
+ 	fseek(fp, 20, SEEK_SET);
 	do {
 		c = fgetc(fp);
 		switch (c) {
@@ -42,6 +45,18 @@ void run(FILE *fp) {
 				printf("char: %c\n", i.content.c);
 				stack[size++] = i;
 			}break;
+			
+			case '\x2b': {
+				addr_t addr;
+				fread(&addr, 2, 1, fp);
+				fseek(fp, addr, SEEK_SET);
+			} break;
+
+			case EOF: break;
+			
+			default:
+				printf("Unrecognized instruction: %x\n", c);
+			break;
 			/*
 			case '\x09':{
 				struct stack_item i = {};
@@ -80,7 +95,7 @@ void run(FILE *fp) {
 }
 
 int main (int argc, char **argv){
-    FILE *fp = fopen("out.bin", "rb+");
+    FILE *fp = fopen("out.eva", "rb+");
 
     run(fp);
 	return 0;
