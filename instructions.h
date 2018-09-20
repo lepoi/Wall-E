@@ -29,6 +29,20 @@ char dcl_4(FILE *fp, struct asm_state *state) {
 	return 0;
 }
 
+char dcl_8(FILE *fp, struct asm_state *state) {
+	char *var_name = consume_var(fp, state);
+	if (!var_name)
+		return 1;
+
+	if (lookup_item(state->var_addrs, var_name)) {
+		printf("Variable already declared -> \"%s\"\n", var_name);
+		return 1;
+	}
+
+	DECLARE_VAR(var_name, 8);
+	return 0;
+}
+
 char dcl_1(FILE *fp, struct asm_state *state) {
 	char *var_name = consume_var(fp, state);
 	if (!var_name)
@@ -40,6 +54,26 @@ char dcl_1(FILE *fp, struct asm_state *state) {
 	}
 
 	DECLARE_VAR(var_name, 1);
+	return 0;
+}
+
+char dcl_s(FILE *fp, struct asm_state *state) {
+	char *var_name = consume_var(fp, state);
+	if (!var_name)
+		return 1;
+
+	if (lookup_item(state->var_addrs, var_name)) {
+		printf("Variable already decared -> \"%s\"\n", var_name);
+		return 1.
+	}
+
+	char *buffer;
+	if (fscanf(fp, "%s", &buffer) != 1) {
+		printf("String expected\n");
+		return 1;
+	}
+
+	DECLARE_VAR(var_name, strlen(buffer));
 	return 0;
 }
 
@@ -63,6 +97,26 @@ char dclv_4(FILE *fp, struct asm_state *state) {
 	return 0;
 }
 
+char dclv_8(FILE *fp, struct asm_state *state) {
+	char *var_name = consume_var(fp, state);
+	if (!var_name)
+		return 1;
+
+	if (lookup_item(state->var_addrs, var_name)) {
+		printf("Variable already declared -> \"%s\"\n", var_name);
+		return 1;
+	}
+
+	int buffer;	
+	if (fscanf(fp, "%i", &buffer) != 1) {
+		printf("Int expected\n");
+		return 1;
+	}
+
+	DECLARE_VAR(var_name, buffer * 8);
+	return 0;
+}
+
 char dclv_1(FILE *fp, struct asm_state *state) {
 	char *var_name = consume_var(fp, state);
 	if (!var_name)
@@ -81,6 +135,27 @@ char dclv_1(FILE *fp, struct asm_state *state) {
 	}
 
 	DECLARE_VAR(var_name, buffer);
+	return 0;
+}
+
+char dclv_s(FILE *fp, struct asm_state *state) {
+	char *var_name = consume_var(fp, state);
+	if (!var_name)
+		return 1;
+
+	if (lookup_item(state->var_addrs, var_name)) {
+		error_log(state->line_number, "Variable "C_BLU"%s"C_RST" already declared", var_name);
+		return 1;
+	}
+
+	int buffer;
+	if (fscanf(fp, "%i", &buffer) != 1) {
+		error_log(state->line_number, "Expected int constant");
+		printf("Int expected\n");
+		return 1;
+	}
+
+	DECLARE_VAR(var_name, buffer * 4);
 	return 0;
 }
 
