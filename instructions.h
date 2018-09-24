@@ -155,7 +155,7 @@ char dclv_s(FILE *fp, struct asm_state *state) {
 		return 1;
 	}
 
-	DECLARE_VAR(var_name, buffer * 4);
+	DECLARE_VAR(var_name, buffer * 2);
 	return 0;
 }
 
