@@ -1,8 +1,7 @@
 #define MAX_VAR_NAME_LENGTH 64
 
 #define DECLARE_VAR(var_name, size)\
-	hash_item(state->var_addrs, new_ht_item(state->data_size, var_name, NULL));\
-	state->data_size += size
+	hash_item(state->var_addrs, new_ht_item(state->count++, var_name, NULL));
 
 static char *consume_var(FILE *fp, struct asm_state *state) {
 	char *buffer = (char *) malloc(MAX_VAR_NAME_LENGTH);
@@ -13,6 +12,23 @@ static char *consume_var(FILE *fp, struct asm_state *state) {
 	}
 
 	return buffer;
+}
+
+char dcl(FILE *fp, struct asm_state *state) {
+	char *var_name = consume_var(fp, state);
+	if (!var_name)
+		return 1;
+
+	if (lookup_item(state->var_addrs, var_name)) {
+		printf("Variable already declared -> \"%s\"\n", var_name);
+		return 1;
+	}
+
+	DECLARE_VAR(var_name, 0);
+	addr_t addr = (addr_t) state->count - 1;
+	fwrite(&addr, 2, 1, state->fp_out);
+	state->exec_size += sizeof(addr_t);
+	return 0;
 }
 
 char dcl_4(FILE *fp, struct asm_state *state) {
@@ -64,11 +80,11 @@ char dcl_s(FILE *fp, struct asm_state *state) {
 
 	if (lookup_item(state->var_addrs, var_name)) {
 		printf("Variable already decared -> \"%s\"\n", var_name);
-		return 1.
+		return 1;
 	}
 
 	char *buffer;
-	if (fscanf(fp, "%s", &buffer) != 1) {
+	if (fscanf(fp, "%s", buffer) != 1) {
 		printf("String expected\n");
 		return 1;
 	}
@@ -172,16 +188,15 @@ char kint(FILE *fp, struct asm_state *state) {
 	return 0;
 }
 
-char kfloat(FILE *fp, struct asm_state *state) {
-	float buffer;
+char kdouble(FILE *fp, struct asm_state *state) {
+	double buffer;
 
-	if (fscanf(fp, "%f", &buffer) != 1) {
+	if (fscanf(fp, "%lf", &buffer) != 1) {
 		printf("Expected constant float\n");
 		return 1;
 	}
 
 	fwrite(&buffer, sizeof(buffer), 1, state->fp_out);
-	printf("float: %f\n", buffer);
 	state->exec_size += sizeof(buffer);
 	return 0;
 }
@@ -201,15 +216,13 @@ char kchar(FILE *fp, struct asm_state *state) {
 }
 
 char kstring(FILE *fp, struct asm_state *state) {
-	char buffer[64];
+	char buffer[256];
 
-	if (fscanf(fp, "%s", buffer) != 1) {
-		printf("Expected constant string");
-		return 1;
-	}
+	int r = fscanf(fp, " \"%256[^\"]\"", buffer);
 
-	fwrite(&buffer, strlen(buffer), 1, state->fp_out);
-	state->exec_size += strlen(buffer);
+	int len = strlen(buffer);
+	fwrite(&buffer, len + 1, 1, state->fp_out);
+	state->exec_size += len + 1;
 	return 0;
 }
 

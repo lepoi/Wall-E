@@ -75,14 +75,21 @@ int main(int argc, char *args[]) {
 	 * Instructions with opcode 0 will not be written to the binary file, as they
 	 * are not read by the virtual machine.
 	*/
-	DECLARE_INSTRUCTION(0, "DCLI", dcl_4);
-	DECLARE_INSTRUCTION(0, "DCLD", dcl_8);
-	DECLARE_INSTRUCTION(0, "DCLC", dcl_1);
-	DECLARE_INSTRUCTION(0, "DCLS", dcl_s);
-	DECLARE_INSTRUCTION(0, "DCLVI", dclv_4);
-	DECLARE_INSTRUCTION(0, "DCLVD", dclv_8);
-	DECLARE_INSTRUCTION(0, "DCLVC", dclv_1);
-	DECLARE_INSTRUCTION(0, "DCLVS", dclv_s);
+	DECLARE_INSTRUCTION(1, "EXT", NULL);
+	DECLARE_INSTRUCTION(2, "DCLI", dcl);
+	DECLARE_INSTRUCTION(3, "DCLD", dcl);
+	DECLARE_INSTRUCTION(4, "DCLC", dcl);
+	DECLARE_INSTRUCTION(5, "DCLS", dcl);
+	DECLARE_INSTRUCTION(6, "PUSH", var);
+	DECLARE_INSTRUCTION(7, "PUSHI", kint);
+	DECLARE_INSTRUCTION(8, "PUSHD", kdouble);
+	DECLARE_INSTRUCTION(9, "PUSHC", kchar);
+	DECLARE_INSTRUCTION(10, "PUSHS", kstring);
+	DECLARE_INSTRUCTION(11, "POP", var);
+	DECLARE_INSTRUCTION(12, "WRT", var);
+	DECLARE_INSTRUCTION(13, "WRTS", kstring);
+	DECLARE_INSTRUCTION(14, "WRTLN", NULL);
+	/*
 	DECLARE_INSTRUCTION(1, "EXT", NULL);
 	DECLARE_INSTRUCTION(2, "PUSHI", var);
 	DECLARE_INSTRUCTION(3, "PUSHD", var);
@@ -140,7 +147,7 @@ int main(int argc, char *args[]) {
 	DECLARE_INSTRUCTION(55, "MOD", NULL);
 	DECLARE_INSTRUCTION(56, "INC", NULL);
 	DECLARE_INSTRUCTION(57, "DEC", NULL);
-
+*/
 	if (!args[1]) {
 		printf("Needs more arguments\n");
 		return 1;

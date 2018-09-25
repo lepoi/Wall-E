@@ -1,3 +1,12 @@
-LABEL:
-PUSHKI 5
-JMP LABEL
+DCLI a
+DCLI b
+PUSHI 10
+PUSHI 20
+POP a
+POP b
+WRTS "Valor de a: "
+WRT a
+WRTLN
+WRTS "Valor de b: "
+WRT b
+WRTLN
