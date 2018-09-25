@@ -27,6 +27,8 @@
 #define MUL		17
 #define	DIV		18
 #define MOD		19
+#define JMP		20
+#define JEQ		21
 
 #define MAX_STACK_SIZE	64
 #define MAX_STRING_SIZE 256
