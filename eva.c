@@ -81,6 +81,29 @@ void run(FILE *fp) {
 
 			default: printf("default at: %lu -> [%x]", ftell(fp), c); break;
 
+			case JMP: {
+				unsigned short address;
+				fread(&address, sizeof(address), 1, fp);
+
+				fseek(fp, 20 + address, SEEK_SET);
+			} break;
+
+			case JEQ: {
+				struct vm_ht_item b = pop(fp);
+				struct vm_ht_item a = pop(fp);
+
+				if (a.type != b.type)
+					error_exit("Different operands");
+
+				switch(a.type) {
+					
+				}
+				unsigned short address;
+				fread(&address, sizeof(address), 1, fp);
+
+				fseek(fp, 20 + address, SEEK_SET);
+			} break;
+
 			case ADD: {
 				struct vm_ht_item b = pop(fp);
 				struct vm_ht_item a = pop(fp);
@@ -96,6 +119,7 @@ void run(FILE *fp) {
 							error_exit("String reallication error");
 						strcat(a.content.s, b.content.s);
 					} break;
+					default: error_exit("Invalid operands"); break;
 				}
 
 				push(&a);
@@ -111,6 +135,7 @@ void run(FILE *fp) {
 				switch(a.type) {
 					case TYPE_INT: a.content.i -= b.content.i; break;
 					case TYPE_DOUBLE: a.content.d -= b.content.d; break;
+					default: error_exit("Invalid operands"); break;
 				}
 
 				push(&a);
@@ -126,6 +151,7 @@ void run(FILE *fp) {
 				switch(a.type) {
 					case TYPE_INT: a.content.i *= b.content.i; break;
 					case TYPE_DOUBLE: a.content.d *= b.content.d; break;
+					default: error_exit("Invalid operands"); break;
 				}
 
 				push(&a);
@@ -141,6 +167,22 @@ void run(FILE *fp) {
 				switch(a.type) {
 					case TYPE_INT: a.content.i /= b.content.i; break;
 					case TYPE_DOUBLE: a.content.d /= b.content.d; break;
+					default: error_exit("Invalid operands"); break;
+				}
+
+				push(&a);
+			} break;
+
+			case MOD: {
+				struct vm_ht_item b = pop(fp);
+				struct vm_ht_item a = pop(fp);
+
+				if (a.type != b.type)
+					error_exit("Adding different types is not supported");
+
+				switch(a.type) {
+					case TYPE_INT: a.content.i %= b.content.i; break;
+					default: error_exit("Invalid operands"); break;
 				}
 
 				push(&a);
