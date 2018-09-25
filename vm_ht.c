@@ -14,7 +14,6 @@ struct vm_ht *new_vm_ht(u8 bucket_size) {
 void vm_ht_add(struct vm_ht *ht, struct vm_ht_item *item) {
 	int index = ht->count++ % ht->size;
 	struct vm_ht_item *stop = ht->items[index];
-	item->id = ht->count - 1;
 
 	if (!stop)
 		ht->items[index] = item;
@@ -24,7 +23,6 @@ void vm_ht_add(struct vm_ht *ht, struct vm_ht_item *item) {
 
 		stop->next = item;
 	}
-
 }
 
 struct vm_ht_item *vm_ht_get(struct vm_ht *ht, unsigned short id) {

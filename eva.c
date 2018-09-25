@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "vm_ht.h"
 
 #define TYPE_INT		0
@@ -21,8 +22,14 @@
 #define WRT		12
 #define WRTS	13
 #define WRTLN	14
+#define ADD		15
+#define	SUB		16
+#define MUL		17
+#define	DIV		18
+#define MOD		19
 
 #define MAX_STACK_SIZE	64
+#define MAX_STRING_SIZE 256
 
 struct vm_ht_item stack[MAX_STACK_SIZE];
 unsigned char stack_size;
@@ -42,6 +49,13 @@ struct vm_ht_item *get_var(FILE *fp) {
 		error_exit("Variable not found");
 
 	return item;
+}
+
+unsigned short get_id(FILE *fp) {
+	unsigned short i;
+	fread(&i, sizeof(unsigned short), 1, fp);
+
+	return i;
 }
 
 void push(struct vm_ht_item *item) {
@@ -64,8 +78,77 @@ void run(FILE *fp) {
 	while ((c = fgetc(fp)) != EOF) {
 		switch (c) {
 			case EXT: break;
+
+			default: printf("default at: %lu -> [%x]", ftell(fp), c); break;
+
+			case ADD: {
+				struct vm_ht_item b = pop(fp);
+				struct vm_ht_item a = pop(fp);
+
+				if (a.type != b.type)
+					error_exit("Adding different types is not supported");
+
+				switch(a.type) {
+					case TYPE_INT: a.content.i += b.content.i; break;
+					case TYPE_DOUBLE: a.content.d += b.content.d; break;
+					case TYPE_STRING: {
+						if (!realloc(a.content.s, a.size + b.size))
+							error_exit("String reallication error");
+						strcat(a.content.s, b.content.s);
+					} break;
+				}
+
+				push(&a);
+			} break;
+
+			case SUB: {
+				struct vm_ht_item b = pop(fp);
+				struct vm_ht_item a = pop(fp);
+
+				if (a.type != b.type)
+					error_exit("Adding different types is not supported");
+
+				switch(a.type) {
+					case TYPE_INT: a.content.i -= b.content.i; break;
+					case TYPE_DOUBLE: a.content.d -= b.content.d; break;
+				}
+
+				push(&a);
+			} break;
+
+			case MUL: {
+				struct vm_ht_item b = pop(fp);
+				struct vm_ht_item a = pop(fp);
+
+				if (a.type != b.type)
+					error_exit("Adding different types is not supported");
+
+				switch(a.type) {
+					case TYPE_INT: a.content.i *= b.content.i; break;
+					case TYPE_DOUBLE: a.content.d *= b.content.d; break;
+				}
+
+				push(&a);
+			} break;
+
+			case DIV: {
+				struct vm_ht_item b = pop(fp);
+				struct vm_ht_item a = pop(fp);
+
+				if (a.type != b.type)
+					error_exit("Adding different types is not supported");
+
+				switch(a.type) {
+					case TYPE_INT: a.content.i /= b.content.i; break;
+					case TYPE_DOUBLE: a.content.d /= b.content.d; break;
+				}
+
+				push(&a);
+			} break;
+
 			case DCLI: {
 				struct vm_ht_item *var = malloc(sizeof(struct vm_ht_item));
+				var->id = get_id(fp);
 				var->type = TYPE_INT;
 				var->size = 4;
 
@@ -73,12 +156,30 @@ void run(FILE *fp) {
 			} break;
 
 			case DCLD: {
+				struct vm_ht_item *var = malloc(sizeof(struct vm_ht_item));
+				var->id = get_id(fp);
+				var->type = TYPE_DOUBLE;
+				var->size = 8;
+
+				vm_ht_add(ht, var);
 			} break;
 
 			case DCLC: {
+				struct vm_ht_item *var = malloc(sizeof(struct vm_ht_item));
+				var->id = get_id(fp);
+				var->type = TYPE_CHAR;
+				var->size = 1;
+
+				vm_ht_add(ht, var);
 			} break;
 
-			case DCLS: {	
+			case DCLS: {
+				struct vm_ht_item *var = malloc(sizeof(struct vm_ht_item));
+				var->id = get_id(fp);
+				var->type = TYPE_STRING;
+				var->size = 0;
+
+				vm_ht_add(ht, var);
 			} break;
 
 			case PUSH: {
@@ -94,6 +195,45 @@ void run(FILE *fp) {
 				fread(&i, sizeof(int), 1, fp);
 				item->content.i = i;
 
+				push(item);
+			} break;
+
+			case PUSHD: {
+				struct vm_ht_item *item = malloc(sizeof(struct vm_ht_item));
+				item->type = TYPE_DOUBLE;
+				item->size = 8;
+
+				double d;
+				fread(&d, sizeof(double), 1, fp);
+				item->content.d = d;
+
+				push(item);
+			} break;
+
+			case PUSHC: {
+				struct vm_ht_item *item = malloc(sizeof(struct vm_ht_item));
+				item->type = TYPE_CHAR;
+				item->size = 1;
+
+				char c;
+				fread(&c, sizeof(char), 1, fp);
+				item->content.c = c;
+
+				push(item);
+			} break;
+
+			case PUSHS: {
+				struct vm_ht_item *item = malloc(sizeof(struct vm_ht_item));
+				item->type = TYPE_STRING;
+
+				long offset = ftell(fp);
+				char s[MAX_STRING_SIZE];
+				fread(&s, sizeof(s), 1, fp);
+				item->size = strlen(s);
+				item->content.s = malloc(item->size);
+				strcpy(item->content.s, s);
+				
+				fseek(fp, offset + item->size + 1, SEEK_SET);
 				push(item);
 			} break;
 
@@ -138,41 +278,6 @@ void run(FILE *fp) {
 			case WRTLN: {
 				printf("\n");
 			} break;
-/*
-			case MOVK: {
-				unsigned int id;
-				fread(&id, sizeof(int), 1, fp);
-			
-				struct var *v = find_var(id);
-				switch (v->type) {
-					case 0: {
-						int i;
-						fread(&i, sizeof(int), 1, fp);
-						v->content.i = i;
-					} break;
-
-					case 1: {
-						double d;
-						fread(&d, sizeof(double), 1, fp);
-						v->content.d = d;
-					} break;
-
-					case 2: {
-						char c;
-						fread(&c, sizeof(char), 1, fp);
-						v->content.c = c;
-					} break;
-
-					case 3: {
-						int len = 0;
-
-						for (char c = fgetc(fp); c != '\x00'; c = fgetc(fp), len++);
-						char *s = malloc(sizeof(char) * len);
-						fseek(fp, -len, SEEK_CUR);
-					} break;
-				}
-			} break;
-*/
 		}
 	}
 }
