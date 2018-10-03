@@ -10,6 +10,10 @@ struct vm_ht_item {
 		double d;
 		char c;
 		char *s;
+		int *vi;
+		double *vd;
+		char *vc;
+		char **vs;
 	} content;
 	void *next;
 };

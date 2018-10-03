@@ -7,6 +7,10 @@
 #define TYPE_DOUBLE		1
 #define TYPE_CHAR		2
 #define TYPE_STRING		3
+#define TYPE_VINT		4
+#define TYPE_VDOUBLE	5
+#define TYPE_VCHAR		6
+#define TYPE_VSTRING	7
 
 #define EXT		1
 #define DCLI	2
@@ -14,27 +18,46 @@
 #define DCLC	4
 #define DCLS	5
 #define PUSH	6
-#define PUSHI	7
-#define PUSHD	8
-#define PUSHC	9
-#define PUSHS	10				
-#define POP		11
-#define WRT		12
-#define WRTS	13
-#define WRTLN	14
-#define ADD		15
-#define	SUB		16
-#define MUL		17
-#define	DIV		18
-#define MOD		19
-#define JMP		20
-#define JEQ		21
+#define PUSHV	7
+#define PUSHI	8
+#define PUSHD	9
+#define PUSHC	10
+#define PUSHS	11				
+#define POP		12
+#define POPV	13
+#define WRT		15
+#define WRTS	16
+#define WRTLN	17
+#define ADD		18
+#define	SUB		19
+#define MUL		20
+#define	DIV		21
+#define MOD		22
+#define JMP		23
+#define JPEQ	24
+#define JPNE	25
+#define JPGT	26
+#define JPGE	27
+#define JPLT	28
+#define JPLE	29
+#define DCLVI	30
+#define DCLVD	31
+#define DCLVC	32
+#define DCLVS	33
+#define RDI		34
+#define RDD		35
+#define RDC		36
+#define RDS		37
+#define WRTP	38
 
 #define MAX_STACK_SIZE	64
 #define MAX_STRING_SIZE 256
 
+typedef unsigned short u16;
+typedef unsigned char u8;
+
 struct vm_ht_item stack[MAX_STACK_SIZE];
-unsigned char stack_size;
+u8 stack_size;
 struct vm_ht *ht;
 
 void error_exit(const char *msg) {
@@ -43,21 +66,14 @@ void error_exit(const char *msg) {
 }
 
 struct vm_ht_item *get_var(FILE *fp) {
-	unsigned short id;
-	fread(&id, sizeof(unsigned short), 1, fp);
+	u16 id;
+	fread(&id, sizeof(u16), 1, fp);
 
 	struct vm_ht_item *item = vm_ht_get(ht, id);
 	if (!item)
 		error_exit("Variable not found");
 
 	return item;
-}
-
-unsigned short get_id(FILE *fp) {
-	unsigned short i;
-	fread(&i, sizeof(unsigned short), 1, fp);
-
-	return i;
 }
 
 void push(struct vm_ht_item *item) {
@@ -67,11 +83,31 @@ void push(struct vm_ht_item *item) {
 	stack[stack_size++] = *item;
 }
 
-struct vm_ht_item pop(FILE *fp) {
+struct vm_ht_item pop() {
 	if (stack_size == 0)
 		error_exit("Stack empty");
 
 	return stack[--stack_size];
+}
+
+inline void write(struct vm_ht_item item) {	
+	switch(item.type) {
+		case TYPE_INT: printf("%i", item.content.i); break;
+		case TYPE_DOUBLE: printf("%lf", item.content.d); break;
+		case TYPE_CHAR: printf("%c", item.content.c); break;
+		case TYPE_STRING: printf("%s", item.content.s); break;
+	}
+}
+
+u16 get_u16(FILE *fp) {
+	u16 n;
+	fread(&n, sizeof(n), 1, fp);
+
+	return n;
+}
+
+void jump(FILE *fp, u16 address) {
+	fseek(fp, 20 + address, SEEK_SET);
 }
 
 void run(FILE *fp) {
@@ -79,36 +115,54 @@ void run(FILE *fp) {
 	char c;
 	while ((c = fgetc(fp)) != EOF) {
 		switch (c) {
-			case EXT: break;
+			case EXT: exit(0); break;
 
 			default: printf("default at: %lu -> [%x]", ftell(fp), c); break;
 
-			case JMP: {
-				unsigned short address;
-				fread(&address, sizeof(address), 1, fp);
-
-				fseek(fp, 20 + address, SEEK_SET);
+			case DCLVI: {
+				struct vm_ht_item *var = get_var(fp);
+				var->type = TYPE_VINT;
+				var->size = get_u16(fp);
+				var->vi = malloc(sizeof(int) * var->size);
+				
+				vm_ht_add(ht, var);
 			} break;
 
-			case JEQ: {
-				struct vm_ht_item b = pop(fp);
-				struct vm_ht_item a = pop(fp);
+			case DCLVI: {
+				struct vm_ht_item *var = get_var(fp);
+				var->type = TYPE_VINT;
+				var->size = get_u16(fp);
+				var->vi = malloc(sizeof(int) * var->size);
+				
+				vm_ht_add(ht, var);
+			} break;
+		
+			case DCLVD: {
+				struct vm_ht_item *var = get_var(fp);
+				var->type = TYPE_VINT;
+				var->size = get_u16(fp);
+				var->vi = malloc(sizeof(int) * var->size);
+				
+				vm_ht_add(ht, var);
+			} break;
 
-				if (a.type != b.type)
-					error_exit("Different operands");
+			case DCLVS: {
+				struct vm_ht_item *var = get_var(fp);
+				var->type = TYPE_VSTRING;
+				var->size = sizeof(char **);
+				var->vs = malloc(sizeof(char **));
 
-				switch(a.type) {
-					
-				}
-				unsigned short address;
-				fread(&address, sizeof(address), 1, fp);
+				vm_ht_add(ht,  var);
+			} break;
 
-				fseek(fp, 20 + address, SEEK_SET);
+			case JMP: {
+				u16 address = get_u16(fp);
+				jump(fp, address);
 			} break;
 
 			case ADD: {
-				struct vm_ht_item b = pop(fp);
-				struct vm_ht_item a = pop(fp);
+				struct vm_ht_item b = pop();
+				struct vm_ht_item a = pop();
 
 				if (a.type != b.type)
 					error_exit("Adding different types is not supported");
@@ -128,8 +182,8 @@ void run(FILE *fp) {
 			} break;
 
 			case SUB: {
-				struct vm_ht_item b = pop(fp);
-				struct vm_ht_item a = pop(fp);
+				struct vm_ht_item b = pop();
+				struct vm_ht_item a = pop();
 
 				if (a.type != b.type)
 					error_exit("Adding different types is not supported");
@@ -144,8 +198,8 @@ void run(FILE *fp) {
 			} break;
 
 			case MUL: {
-				struct vm_ht_item b = pop(fp);
-				struct vm_ht_item a = pop(fp);
+				struct vm_ht_item b = pop();
+				struct vm_ht_item a = pop();
 
 				if (a.type != b.type)
 					error_exit("Adding different types is not supported");
@@ -160,8 +214,8 @@ void run(FILE *fp) {
 			} break;
 
 			case DIV: {
-				struct vm_ht_item b = pop(fp);
-				struct vm_ht_item a = pop(fp);
+				struct vm_ht_item b = pop();
+				struct vm_ht_item a = pop();
 
 				if (a.type != b.type)
 					error_exit("Adding different types is not supported");
@@ -176,8 +230,8 @@ void run(FILE *fp) {
 			} break;
 
 			case MOD: {
-				struct vm_ht_item b = pop(fp);
-				struct vm_ht_item a = pop(fp);
+				struct vm_ht_item b = pop();
+				struct vm_ht_item a = pop();
 
 				if (a.type != b.type)
 					error_exit("Adding different types is not supported");
@@ -190,9 +244,56 @@ void run(FILE *fp) {
 				push(&a);
 			} break;
 
+			case RDI: {
+				char buffer[64];
+				fgets(buffer, 64, stdin);
+
+				struct vm_ht_item *item = malloc(sizeof(struct vm_ht_item));
+				item->type = TYPE_INT;
+				item->size = 4;
+				item->content.i = atoi(buffer);
+
+				push(item);
+			} break;
+
+			case RDD: {
+				char buffer[64];
+				fgets(buffer, 64, stdin);
+
+				struct vm_ht_item *item = malloc(sizeof(struct vm_ht_item));
+				item->type = TYPE_DOUBLE;
+				item->size = 8;
+				item->content.d = atof(buffer);
+
+				push(item);
+			} break;
+
+			case RDC: {
+				char c = getchar();
+
+				struct vm_ht_item *item = malloc(sizeof(struct vm_ht_item));
+				item->type = TYPE_CHAR;
+				item->size = 1;
+				item->content.c = c;
+
+				push(item);
+			} break;
+	
+			case RDS: {
+				char *buffer = malloc(sizeof(char) * 64);
+				fgets(buffer, 64, stdin);
+
+				struct vm_ht_item *item = malloc(sizeof(struct vm_ht_item));
+				item->type = TYPE_STRING;
+				item->size = strlen(buffer);
+				item->content.s = buffer;
+
+				push(item);
+			} break;
+
 			case DCLI: {
 				struct vm_ht_item *var = malloc(sizeof(struct vm_ht_item));
-				var->id = get_id(fp);
+				var->id = get_u16(fp);
 				var->type = TYPE_INT;
 				var->size = 4;
 
@@ -201,7 +302,7 @@ void run(FILE *fp) {
 
 			case DCLD: {
 				struct vm_ht_item *var = malloc(sizeof(struct vm_ht_item));
-				var->id = get_id(fp);
+				var->id = get_u16(fp);
 				var->type = TYPE_DOUBLE;
 				var->size = 8;
 
@@ -210,7 +311,7 @@ void run(FILE *fp) {
 
 			case DCLC: {
 				struct vm_ht_item *var = malloc(sizeof(struct vm_ht_item));
-				var->id = get_id(fp);
+				var->id = get_u16(fp);
 				var->type = TYPE_CHAR;
 				var->size = 1;
 
@@ -219,7 +320,7 @@ void run(FILE *fp) {
 
 			case DCLS: {
 				struct vm_ht_item *var = malloc(sizeof(struct vm_ht_item));
-				var->id = get_id(fp);
+				var->id = get_u16(fp);
 				var->type = TYPE_STRING;
 				var->size = 0;
 
@@ -283,28 +384,14 @@ void run(FILE *fp) {
 
 			case POP: {
 				struct vm_ht_item *var = get_var(fp);
-				struct vm_ht_item item = pop(fp);
+				struct vm_ht_item item = pop();
 
-				if (var->type != item.type)
-					error_exit("Top of stack and variable types differ");
-
-				switch(var->type) {
-					case TYPE_INT: var->content.i = item.content.i; break;
-					case TYPE_DOUBLE: var->content.d = item.content.d; break;
-					case TYPE_CHAR: var->content.c = item.content.c; break;
-					case TYPE_STRING: var->content.s = item.content.s; break;
-				}
+				var->content = item.content;
 			} break;
 
 			case WRT: {
 				struct vm_ht_item *var = get_var(fp);
-
-				switch(var->type) {
-					case TYPE_INT: printf("%i", var->content.i); break;
-					case TYPE_DOUBLE: printf("%lf", var->content.d); break;
-					case TYPE_CHAR: printf("%c", var->content.c); break;
-					case TYPE_STRING: printf("%s", var->content.s); break;
-				}
+				write(*var);
 			} break;
 
 			case WRTS: {
@@ -319,8 +406,11 @@ void run(FILE *fp) {
 				printf("%s", s);
 			} break;
 
-			case WRTLN: {
-				printf("\n");
+			case WRTLN: printf("\n"); break;
+
+			case WRTP: {
+				struct vm_ht_item item = pop();
+				write(item);
 			} break;
 		}
 	}

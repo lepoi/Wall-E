@@ -32,3 +32,8 @@ MOD
 POP i
 WRT i
 WRTLN
+
+PUSH d
+POP i
+WRT i
+WRTLN
