@@ -1,12 +1,12 @@
-typedef unsigned short addr_t;
+#define MAGIC_NUMBER "\x00\x45\x56\x41\x00\x00\x00\x00\x00\x00\x00\x32\x38\x32\x30\x32"
+#define HEADER_OFFSET sizeof(MAGIC_NUMBER) - 1
 
-struct asm_state {
-	FILE *fp_out;
-	addr_t data_size;
-	addr_t exec_size;
-	addr_t count;
-	struct hashtable *var_addrs;
-	struct hashtable *ins;
-	struct hashtable *labels;
-	unsigned int line_number;
+typedef unsigned char u8;
+typedef unsigned short u16;
+typedef unsigned int u32;
+typedef unsigned int u64;
+
+struct string {
+	char *str;
+	u8 size;
 };

@@ -6,9 +6,6 @@
 #include "hashtable.h"
 #include "instructions.h"
 
-#define MAGIC_NUMBER "\x00\x45\x56\x41\x00\x00\x00\x00\x00\x00\x00\x32\x38\x32\x30\x32"
-#define DATA_SEGMENT_OFFSET sizeof(MAGIC_NUMBER) - 1
-
 #define DECLARE_INSTRUCTION(opcode, label, body)\
 	hash_item(state.ins, new_ht_item(opcode, label, body))
 
@@ -47,14 +44,10 @@ void assemble(FILE *fp, struct asm_state *state) {
 			goto next;
 		}
 
-		if (ins->opcode) {
-			fwrite(&ins->opcode, 1, 1, state->fp_out);
-			state->exec_size += 1;
-		}
+		fwrite(&ins->opcode, 1, 1, state->fp_out);
 
 		if (ins->body)
-			if (!ins->body(fp, state))
-				goto next;
+			ins->body(fp, state);
 
 next:
 		state->line_number++;
@@ -76,34 +69,50 @@ int main(int argc, char *args[]) {
 	DECLARE_INSTRUCTION(3, "DCLD", dcl);
 	DECLARE_INSTRUCTION(4, "DCLC", dcl);
 	DECLARE_INSTRUCTION(5, "DCLS", dcl);
-	DECLARE_INSTRUCTION(6, "PUSH", var);
-	DECLARE_INSTRUCTION(7, "PUSHV", var);
-	DECLARE_INSTRUCTION(8, "PUSHI", kint);
-	DECLARE_INSTRUCTION(9, "PUSHD", kdouble);
-	DECLARE_INSTRUCTION(10, "PUSHC", kchar);
-	DECLARE_INSTRUCTION(11, "PUSHS", kstring);
-	DECLARE_INSTRUCTION(12, "POP", var);
-	DECLARE_INSTRUCTION(13, "POPV", var);
-	DECLARE_INSTRUCTION(14, "RDI", var);
-	DECLARE_INSTRUCTION(14, "RDD", var);
-	DECLARE_INSTRUCTION(14, "RDC", var);
-	DECLARE_INSTRUCTION(14, "RDS", var);
-	DECLARE_INSTRUCTION(15, "WRT", var);
-	DECLARE_INSTRUCTION(16, "WRTS", kstring);
-	DECLARE_INSTRUCTION(16, "WRTP", NULL);
-	DECLARE_INSTRUCTION(17, "WRTLN", NULL);
-	DECLARE_INSTRUCTION(18, "ADD", NULL);
-	DECLARE_INSTRUCTION(19, "SUB", NULL);
-	DECLARE_INSTRUCTION(20, "MUL", NULL);
-	DECLARE_INSTRUCTION(21, "DIV", NULL);
-	DECLARE_INSTRUCTION(22, "MOD", NULL);
-	DECLARE_INSTRUCTION(23, "JMP", NULL);
-	DECLARE_INSTRUCTION(24, "JPEQ", NULL);
-	DECLARE_INSTRUCTION(25, "JPNE", NULL);
-	DECLARE_INSTRUCTION(26, "JPGT", NULL);
-	DECLARE_INSTRUCTION(27, "JPGE", NULL);
-	DECLARE_INSTRUCTION(28, "JPLT", NULL);
-	DECLARE_INSTRUCTION(29, "JPLE", NULL);
+	DECLARE_INSTRUCTION(6, "DCLVI", dcl);
+	DECLARE_INSTRUCTION(7, "DCLVD", dcl);
+	DECLARE_INSTRUCTION(8, "DCLVC", dcl);
+	DECLARE_INSTRUCTION(9, "DCLVS", dcl);
+	DECLARE_INSTRUCTION(10, "PUSH", var);
+	DECLARE_INSTRUCTION(11, "PUSHD", var);
+	DECLARE_INSTRUCTION(12, "PUSHC", var);
+	DECLARE_INSTRUCTION(13, "PUSHS", var);
+	DECLARE_INSTRUCTION(14, "PUSHV", var);
+	DECLARE_INSTRUCTION(15, "PUSHVD", var);
+	DECLARE_INSTRUCTION(16, "PUSHVC", var);
+	DECLARE_INSTRUCTION(17, "PUSHVS", var);
+	DECLARE_INSTRUCTION(18, "PUSHKI", kint);
+	DECLARE_INSTRUCTION(19, "PUSHKD", kdouble);
+	DECLARE_INSTRUCTION(20, "PUSHKC", kchar);
+	DECLARE_INSTRUCTION(21, "PUSHKS", kstring);
+	DECLARE_INSTRUCTION(22, "POPI", var);
+	DECLARE_INSTRUCTION(23, "POPD", var);
+	DECLARE_INSTRUCTION(24, "POPC", var);
+	DECLARE_INSTRUCTION(25, "POPS", var);
+	DECLARE_INSTRUCTION(26, "POPVI", var);
+	DECLARE_INSTRUCTION(27, "POPVD", var);
+	DECLARE_INSTRUCTION(28, "POPVC", var);
+	DECLARE_INSTRUCTION(29, "POPVS", var);
+	DECLARE_INSTRUCTION(30, "ADD", NULL);
+	DECLARE_INSTRUCTION(31, "SUB", NULL);
+	DECLARE_INSTRUCTION(32, "MUL", NULL);
+	DECLARE_INSTRUCTION(33, "DIV", NULL);
+	DECLARE_INSTRUCTION(34, "MOD", NULL);
+	DECLARE_INSTRUCTION(35, "JMP", NULL);
+	DECLARE_INSTRUCTION(36, "JPEQ", NULL);
+	DECLARE_INSTRUCTION(37, "JPNE", NULL);
+	DECLARE_INSTRUCTION(38, "JPGT", NULL);
+	DECLARE_INSTRUCTION(39, "JPGE", NULL);
+	DECLARE_INSTRUCTION(40, "JPLT", NULL);
+	DECLARE_INSTRUCTION(41, "JPLE", NULL);
+	DECLARE_INSTRUCTION(42, "RDI", NULL);
+	DECLARE_INSTRUCTION(43, "RDD", NULL);
+	DECLARE_INSTRUCTION(44, "RDC", NULL);
+	DECLARE_INSTRUCTION(45, "RDS", NULL);
+	DECLARE_INSTRUCTION(46, "WRT", NULL);
+	DECLARE_INSTRUCTION(47, "WRTS", NULL);
+	DECLARE_INSTRUCTION(48, "WRTP", NULL);
+	DECLARE_INSTRUCTION(49, "WRTLN", NULL);
 
 	if (!args[1]) {
 		printf("Needs more arguments\n");
@@ -117,15 +126,10 @@ int main(int argc, char *args[]) {
 	}
 
 	state.fp_out = fopen("temp.bin", "wb+");
-	if (!state.fp_out) {
+	if (!state.fp_out)
 		printf("Could not create output file\n");
-	}
 
-	// write magic number
 	fwrite(MAGIC_NUMBER, sizeof(MAGIC_NUMBER) - 1, 1, state.fp_out);
-	// data and exec segment
-	fwrite("\x00\x00\x00\x00", 4, 1, state.fp_out);
-
 	assemble(fp, &state);
 
 	struct list_item *list = state.labels->list;
@@ -135,16 +139,12 @@ int main(int argc, char *args[]) {
 			printf("Invalid label found\n");
 			error = 1;
 		}
+
 		if (error)
 			break;
 
 		list = list->next;
 	}
-
-
-	fseek(state.fp_out, sizeof(MAGIC_NUMBER) - 1, SEEK_SET);
-	fwrite(&state.data_size, sizeof(addr_t), 1, state.fp_out);
-	fwrite(&state.exec_size, sizeof(addr_t), 1, state.fp_out);
 
 	fclose(fp);
 	fclose(state.fp_out);

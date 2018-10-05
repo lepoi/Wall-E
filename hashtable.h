@@ -1,3 +1,12 @@
+struct asm_state {              
+	FILE *fp_out;               
+	u16 count;                  
+	struct hashtable *var_addrs;
+	struct hashtable *ins;      
+	struct hashtable *labels;   
+	unsigned int line_number;   
+};                              
+
 struct list_item {
 	struct ht_item *item;
 	struct list_item *next;

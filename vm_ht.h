@@ -1,19 +1,18 @@
-typedef unsigned char u8;
-typedef unsigned int u32;
+#include "types.h"
 
 struct vm_ht_item {
-	unsigned short id;
+	u16 id;
 	u8 type;
-	u8 size;
+	u16 size;
 	union {
 		int i;
 		double d;
 		char c;
-		char *s;
+		struct string *s;
 		int *vi;
 		double *vd;
 		char *vc;
-		char **vs;
+		struct string **vs;
 	} content;
 	void *next;
 };

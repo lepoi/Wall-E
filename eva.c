@@ -3,58 +3,69 @@
 #include <string.h>
 #include "vm_ht.h"
 
-#define TYPE_INT		0
-#define TYPE_DOUBLE		1
-#define TYPE_CHAR		2
-#define TYPE_STRING		3
-#define TYPE_VINT		4
-#define TYPE_VDOUBLE	5
-#define TYPE_VCHAR		6
-#define TYPE_VSTRING	7
+#define TYPE_INT		1
+#define TYPE_DOUBLE		2
+#define TYPE_CHAR		3
+#define TYPE_STRING		4
+#define TYPE_VINT		5
+#define TYPE_VDOUBLE	6
+#define TYPE_VCHAR		7
+#define TYPE_VSTRING	8
 
 #define EXT		1
 #define DCLI	2
 #define DCLD	3
 #define DCLC	4
 #define DCLS	5
-#define PUSH	6
-#define PUSHV	7
-#define PUSHI	8
-#define PUSHD	9
-#define PUSHC	10
-#define PUSHS	11				
-#define POP		12
-#define POPV	13
-#define WRT		15
-#define WRTS	16
-#define WRTLN	17
-#define ADD		18
-#define	SUB		19
-#define MUL		20
-#define	DIV		21
-#define MOD		22
-#define JMP		23
-#define JPEQ	24
-#define JPNE	25
-#define JPGT	26
-#define JPGE	27
-#define JPLT	28
-#define JPLE	29
-#define DCLVI	30
-#define DCLVD	31
-#define DCLVC	32
-#define DCLVS	33
-#define RDI		34
-#define RDD		35
-#define RDC		36
-#define RDS		37
-#define WRTP	38
+#define DCLVI	6
+#define DCLVD	7
+#define DCLVC	8
+#define DCLVS	9
+#define PUSH	10
+#define PUSHD	11
+#define PUSHC	12
+#define PUSHS	13
+#define PUSHV	14
+#define PUSHVD	15
+#define PUSHVC	16
+#define PUSHVS	17
+#define PUSHKI	18
+#define PUSHKD	19
+#define PUSHKC	20
+#define PUSHKS	21
+#define POPI	22
+#define POPD	23
+#define POPC	24
+#define POPS	25
+#define POPVI	26
+#define POPVD	27
+#define POPVC	28
+#define POPVS	29
+#define ADD		30
+#define	SUB		31
+#define MUL		32
+#define	DIV		33
+#define MOD		34
+#define JMP		35
+#define JPEQ	36
+#define JPNE	37
+#define JPGT	38
+#define JPGE	39
+#define JPLT	40
+#define JPLE	41
+#define RDI		42
+#define RDD		43
+#define RDC		44
+#define RDS		45
+#define WRT		46
+#define WRTS	47
+#define WRTP	48
+#define WRTLN	49
 
 #define MAX_STACK_SIZE	64
-#define MAX_STRING_SIZE 256
+#define MAX_STRING_SIZE 255
 
-typedef unsigned short u16;
-typedef unsigned char u8;
+#define IS_NUMBER(type) type == TYPE_INT || type == TYPE_DOUBLE || type == TYPE_CHAR
 
 struct vm_ht_item stack[MAX_STACK_SIZE];
 u8 stack_size;
@@ -76,6 +87,23 @@ struct vm_ht_item *get_var(FILE *fp) {
 	return item;
 }
 
+struct string *get_string(FILE *fp) {
+	struct string *s = malloc(sizeof(struct string));
+
+	char buffer[MAX_STRING_SIZE];
+	char c;
+	u8 i = 0;
+	while ((c = fgetc(fp)) != '\x00')
+		buffer[i++] = c;
+	buffer[i] = '\x00';
+
+	s->size = strlen(buffer);
+	s->str = malloc(s->size);
+	strcpy(s->str, buffer);
+
+	return s;
+}
+
 void push(struct vm_ht_item *item) {
 	if (stack_size == MAX_STACK_SIZE - 1)
 		error_exit("Stack full");
@@ -95,7 +123,7 @@ inline void write(struct vm_ht_item item) {
 		case TYPE_INT: printf("%i", item.content.i); break;
 		case TYPE_DOUBLE: printf("%lf", item.content.d); break;
 		case TYPE_CHAR: printf("%c", item.content.c); break;
-		case TYPE_STRING: printf("%s", item.content.s); break;
+		case TYPE_STRING: printf("%s", item.content.s->str); break;
 	}
 }
 
@@ -106,12 +134,28 @@ u16 get_u16(FILE *fp) {
 	return n;
 }
 
+u64 get_index(struct vm_ht_item *item) {
+	u64 index;
+	if (item->type == TYPE_STRING) {
+		error_exit("Vector indexing with string is not supported (yet)");
+		// index = stroul(item->content.s, NULL, 		
+	}
+
+	switch(item->type) {
+		case TYPE_INT: index = item->content.i; break;
+		case TYPE_DOUBLE: index = item->content.d; break;
+		case TYPE_CHAR: index = item->content.c; break;
+	}
+
+	return index;
+}
+
 void jump(FILE *fp, u16 address) {
-	fseek(fp, 20 + address, SEEK_SET);
+	fseek(fp, HEADER_OFFSET + address, SEEK_SET);
 }
 
 void run(FILE *fp) {
-	fseek(fp, 20, SEEK_SET);
+	fseek(fp, HEADER_OFFSET, SEEK_SET);
 	char c;
 	while ((c = fgetc(fp)) != EOF) {
 		switch (c) {
@@ -119,38 +163,73 @@ void run(FILE *fp) {
 
 			default: printf("default at: %lu -> [%x]", ftell(fp), c); break;
 
-			case DCLVI: {
-				struct vm_ht_item *var = get_var(fp);
-				var->type = TYPE_VINT;
-				var->size = get_u16(fp);
-				var->vi = malloc(sizeof(int) * var->size);
-				
+			case DCLI: {
+				struct vm_ht_item *var = malloc(sizeof(struct vm_ht_item));
+				var->id = get_u16(fp);
+				var->type = TYPE_INT;
+
+				vm_ht_add(ht, var);
+			} break;
+
+			case DCLD: {
+				struct vm_ht_item *var = malloc(sizeof(struct vm_ht_item));
+				var->id = get_u16(fp);
+				var->type = TYPE_DOUBLE;
+
+				vm_ht_add(ht, var);
+			} break;
+
+			case DCLC: {
+				struct vm_ht_item *var = malloc(sizeof(struct vm_ht_item));
+				var->id = get_u16(fp);
+				var->type = TYPE_CHAR;
+
+				vm_ht_add(ht, var);
+			} break;
+
+			case DCLS: {
+				struct vm_ht_item *var = malloc(sizeof(struct vm_ht_item));
+				var->id = get_u16(fp);
+				var->type = TYPE_STRING;
+
 				vm_ht_add(ht, var);
 			} break;
 
 			case DCLVI: {
 				struct vm_ht_item *var = get_var(fp);
+				var->id = get_u16(fp);
 				var->type = TYPE_VINT;
 				var->size = get_u16(fp);
-				var->vi = malloc(sizeof(int) * var->size);
+				var->content.vi = malloc(sizeof(int) * var->size);
+				
+				vm_ht_add(ht, var);
+			} break;
+
+			case DCLVD: {
+				struct vm_ht_item *var = get_var(fp);
+				var->type = TYPE_VDOUBLE;
+				var->size = get_u16(fp);
+				var->content.vd = malloc(sizeof(double) * var->size);
 				
 				vm_ht_add(ht, var);
 			} break;
 		
-			case DCLVD: {
+			case DCLVC: {
 				struct vm_ht_item *var = get_var(fp);
-				var->type = TYPE_VINT;
+				var->id = get_u16(fp);
+				var->type = TYPE_VCHAR;
 				var->size = get_u16(fp);
-				var->vi = malloc(sizeof(int) * var->size);
+				var->content.vc = malloc(sizeof(char) * var->size);
 				
 				vm_ht_add(ht, var);
 			} break;
 
 			case DCLVS: {
 				struct vm_ht_item *var = get_var(fp);
+				var->id = get_u16(fp);
 				var->type = TYPE_VSTRING;
-				var->size = sizeof(char **);
-				var->vs = malloc(sizeof(char **));
+				var->size = get_u16(fp);
+				var->content.vs = malloc(sizeof(struct string *) * var->size);
 
 				vm_ht_add(ht,  var);
 			} break;
@@ -171,9 +250,9 @@ void run(FILE *fp) {
 					case TYPE_INT: a.content.i += b.content.i; break;
 					case TYPE_DOUBLE: a.content.d += b.content.d; break;
 					case TYPE_STRING: {
-						if (!realloc(a.content.s, a.size + b.size))
+						/*if (!realloc(a.content.s, a.size + b.size))
 							error_exit("String reallication error");
-						strcat(a.content.s, b.content.s);
+						strcat(a.content.s.str, b.content.s.str);*/
 					} break;
 					default: error_exit("Invalid operands"); break;
 				}
@@ -250,7 +329,6 @@ void run(FILE *fp) {
 
 				struct vm_ht_item *item = malloc(sizeof(struct vm_ht_item));
 				item->type = TYPE_INT;
-				item->size = 4;
 				item->content.i = atoi(buffer);
 
 				push(item);
@@ -262,7 +340,6 @@ void run(FILE *fp) {
 
 				struct vm_ht_item *item = malloc(sizeof(struct vm_ht_item));
 				item->type = TYPE_DOUBLE;
-				item->size = 8;
 				item->content.d = atof(buffer);
 
 				push(item);
@@ -273,68 +350,26 @@ void run(FILE *fp) {
 
 				struct vm_ht_item *item = malloc(sizeof(struct vm_ht_item));
 				item->type = TYPE_CHAR;
-				item->size = 1;
 				item->content.c = c;
 
 				push(item);
 			} break;
 	
 			case RDS: {
-				char *buffer = malloc(sizeof(char) * 64);
-				fgets(buffer, 64, stdin);
+				char *buffer = malloc(sizeof(char) * MAX_STRING_SIZE);
+				fgets(buffer, MAX_STRING_SIZE, stdin);
 
 				struct vm_ht_item *item = malloc(sizeof(struct vm_ht_item));
 				item->type = TYPE_STRING;
-				item->size = strlen(buffer);
-				item->content.s = buffer;
+				item->content.s->size = strlen(buffer);
+				item->content.s->str = buffer;
 
 				push(item);
 			} break;
 
-			case DCLI: {
-				struct vm_ht_item *var = malloc(sizeof(struct vm_ht_item));
-				var->id = get_u16(fp);
-				var->type = TYPE_INT;
-				var->size = 4;
-
-				vm_ht_add(ht, var);
-			} break;
-
-			case DCLD: {
-				struct vm_ht_item *var = malloc(sizeof(struct vm_ht_item));
-				var->id = get_u16(fp);
-				var->type = TYPE_DOUBLE;
-				var->size = 8;
-
-				vm_ht_add(ht, var);
-			} break;
-
-			case DCLC: {
-				struct vm_ht_item *var = malloc(sizeof(struct vm_ht_item));
-				var->id = get_u16(fp);
-				var->type = TYPE_CHAR;
-				var->size = 1;
-
-				vm_ht_add(ht, var);
-			} break;
-
-			case DCLS: {
-				struct vm_ht_item *var = malloc(sizeof(struct vm_ht_item));
-				var->id = get_u16(fp);
-				var->type = TYPE_STRING;
-				var->size = 0;
-
-				vm_ht_add(ht, var);
-			} break;
-
-			case PUSH: {
-				push(get_var(fp));
-			} break;
-
-			case PUSHI: {
+			case PUSHKI: {
 				struct vm_ht_item *item = malloc(sizeof(struct vm_ht_item));
 				item->type = TYPE_INT;
-				item->size = 4;
 
 				int i;
 				fread(&i, sizeof(int), 1, fp);
@@ -343,10 +378,9 @@ void run(FILE *fp) {
 				push(item);
 			} break;
 
-			case PUSHD: {
+			case PUSHKD: {
 				struct vm_ht_item *item = malloc(sizeof(struct vm_ht_item));
 				item->type = TYPE_DOUBLE;
-				item->size = 8;
 
 				double d;
 				fread(&d, sizeof(double), 1, fp);
@@ -355,10 +389,9 @@ void run(FILE *fp) {
 				push(item);
 			} break;
 
-			case PUSHC: {
+			case PUSHKC: {
 				struct vm_ht_item *item = malloc(sizeof(struct vm_ht_item));
 				item->type = TYPE_CHAR;
-				item->size = 1;
 
 				char c;
 				fread(&c, sizeof(char), 1, fp);
@@ -367,26 +400,28 @@ void run(FILE *fp) {
 				push(item);
 			} break;
 
-			case PUSHS: {
+			case PUSHKS: {
 				struct vm_ht_item *item = malloc(sizeof(struct vm_ht_item));
 				item->type = TYPE_STRING;
+				item->content.s = get_string(fp);
 
-				long offset = ftell(fp);
-				char s[MAX_STRING_SIZE];
-				fread(&s, sizeof(s), 1, fp);
-				item->size = strlen(s);
-				item->content.s = malloc(item->size);
-				strcpy(item->content.s, s);
-				
-				fseek(fp, offset + item->size + 1, SEEK_SET);
 				push(item);
 			} break;
 
-			case POP: {
+			case PUSH: {
 				struct vm_ht_item *var = get_var(fp);
-				struct vm_ht_item item = pop();
+				struct vm_ht_item *item = malloc(sizeof(struct vm_ht_item));
+				var->type = item->type;
+				var->content = item->content;
 
-				var->content = item.content;
+				push(item);
+			} break;
+
+			case PUSHV: {
+				struct vm_ht_item index_item = pop(fp);
+				u16 index = get_index(&index_item);
+
+				struct vm_ht_item *var = get_var(fp);
 			} break;
 
 			case WRT: {
@@ -395,15 +430,8 @@ void run(FILE *fp) {
 			} break;
 
 			case WRTS: {
-				char s[256];
-				char c;
-				int i = 0;
-				while ((c = fgetc(fp)) != '\x00') {
-					s[i++] = c;
-				}
-
-				s[i] = '\x00';
-				printf("%s", s);
+				struct string *s = get_string(fp);
+				printf("%s", s->str);
 			} break;
 
 			case WRTLN: printf("\n"); break;
