@@ -100,3 +100,7 @@ char label(FILE *fp, struct asm_state *state) {
 	fwrite(&item->opcode, sizeof(item->opcode), 1, state->fp_out);
 	return 0;
 }
+
+char addr(FILE *fp, struct asm_state *state) {
+	return 0;
+}

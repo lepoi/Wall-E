@@ -4,13 +4,13 @@
 #include "vm_ht.h"
 
 #define CHAR		1
-#define INT		2
+#define INT			2
 #define DOUBLE		3
 #define STRING		4
 #define VCHAR		5
-#define VINT	6
+#define VINT		6
 #define VDOUBLE		7
-#define VSTRING	8
+#define VSTRING		8
 
 #define EXT		1
 #define DCLI	2
@@ -496,12 +496,15 @@ void run(FILE *fp) {
 				jump(fp, address);
 			} break;
 
+			case JPGT: {
+				
+			} break;
+
 			case RDI: {
 				char buffer[64];
 				fgets(buffer, 64, stdin);
 
-				struct vm_ht_item *item = malloc(sizeof(struct vm_ht_item));
-				item->type = INT;
+				struct vm_ht_item *item = new_vm_ht_item(INT);
 				item->content.i = atoi(buffer);
 
 				push(item);
@@ -511,8 +514,7 @@ void run(FILE *fp) {
 				char buffer[64];
 				fgets(buffer, 64, stdin);
 
-				struct vm_ht_item *item = malloc(sizeof(struct vm_ht_item));
-				item->type = DOUBLE;
+				struct vm_ht_item *item = new_vm_ht_item(DOUBLE);
 				item->content.d = atof(buffer);
 
 				push(item);
@@ -521,8 +523,7 @@ void run(FILE *fp) {
 			case RDC: {
 				char c = getchar();
 
-				struct vm_ht_item *item = malloc(sizeof(struct vm_ht_item));
-				item->type = CHAR;
+				struct vm_ht_item *item = new_vm_ht_item(CHAR);
 				item->content.c = c;
 
 				push(item);
@@ -532,8 +533,7 @@ void run(FILE *fp) {
 				char *buffer = malloc(sizeof(char) * MAX_STRING_SIZE);
 				fgets(buffer, MAX_STRING_SIZE, stdin);
 
-				struct vm_ht_item *item = malloc(sizeof(struct vm_ht_item));
-				item->type = STRING;
+				struct vm_ht_item *item = new_vm_ht_item(STRING);
 				item->content.s->size = strlen(buffer);
 				item->content.s->str = buffer;
 
