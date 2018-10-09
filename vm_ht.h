@@ -3,7 +3,7 @@
 struct vm_ht_item {
 	u16 id;
 	u8 type;
-	u16 size;
+	int size;
 	union {
 		int i;
 		double d;

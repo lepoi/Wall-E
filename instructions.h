@@ -38,7 +38,7 @@ char kint(FILE *fp, struct asm_state *state) {
 		return 1;
 	}
 
-	fwrite(&buffer, sizeof(buffer), 1, state->fp_out);
+	fwrite(&buffer, sizeof(int), 1, state->fp_out);
 	return 0;
 }
 
@@ -50,7 +50,7 @@ char kdouble(FILE *fp, struct asm_state *state) {
 		return 1;
 	}
 
-	fwrite(&buffer, sizeof(buffer), 1, state->fp_out);
+	fwrite(&buffer, sizeof(double), 1, state->fp_out);
 	return 0;
 }
 
@@ -84,7 +84,7 @@ char var(FILE *fp, struct asm_state *state) {
 		return 1;
 	}
 
-	fwrite(&item->opcode, sizeof(item->opcode), 1, state->fp_out);
+	fwrite(&item->opcode, 2, 1, state->fp_out);
 	return 0;
 }
 

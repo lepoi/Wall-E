@@ -3,14 +3,14 @@
 #include <string.h>
 #include "vm_ht.h"
 
-#define TYPE_CHAR		1
-#define TYPE_INT		2
-#define TYPE_DOUBLE		3
-#define TYPE_STRING		4
-#define TYPE_VINT		5
-#define TYPE_VDOUBLE	6
-#define TYPE_VCHAR		7
-#define TYPE_VSTRING	8
+#define CHAR		1
+#define INT		2
+#define DOUBLE		3
+#define STRING		4
+#define VCHAR		5
+#define VINT	6
+#define VDOUBLE		7
+#define VSTRING	8
 
 #define EXT		1
 #define DCLI	2
@@ -79,10 +79,10 @@ char to_char(struct vm_ht_item item) {
 	char ret;
 
 	switch(item.type) {
-		case TYPE_INT: ret = (char) item.content.i; break;
-		case TYPE_DOUBLE: ret = (char) item.content.d; break;
-		case TYPE_CHAR: ret = item.content.c; break;
-		case TYPE_STRING: ret = item.content.s->str[0]; break;
+		case INT: ret = (char) item.content.i; break;
+		case DOUBLE: ret = (char) item.content.d; break;
+		case CHAR: ret = item.content.c; break;
+		case STRING: ret = item.content.s->str[0]; break;
 		default: error_exit("[to_char] Invalid operands"); break;
 	}
 
@@ -93,10 +93,10 @@ int to_int(struct vm_ht_item item) {
 	int ret;
 
 	switch(item.type) {
-		case TYPE_INT: ret = item.content.i; break;
-		case TYPE_DOUBLE: ret = (int) item.content.d; break;
-		case TYPE_CHAR: ret = (int) item.content.c; break;
-		case TYPE_STRING: ret = atoi(item.content.s->str); break;
+		case INT: ret = item.content.i; break;
+		case DOUBLE: ret = (int) item.content.d; break;
+		case CHAR: ret = (int) item.content.c; break;
+		case STRING: ret = atoi(item.content.s->str); break;
 		default: error_exit("[to_int] Invalid operands"); break;
 	}
 
@@ -107,10 +107,10 @@ double to_double(struct vm_ht_item item) {
 	double ret;
 
 	switch(item.type) {
-		case TYPE_INT: ret = (double) item.content.i; break;
-		case TYPE_DOUBLE: ret = item.content.d; break;
-		case TYPE_CHAR: ret = (double) item.content.c; break;
-		case TYPE_STRING: ret = atof(item.content.s->str); break;
+		case INT: ret = (double) item.content.i; break;
+		case DOUBLE: ret = item.content.d; break;
+		case CHAR: ret = (double) item.content.c; break;
+		case STRING: ret = atof(item.content.s->str); break;
 		default: error_exit("[to_double] Invalid operands"); break;
 	}
 
@@ -123,10 +123,10 @@ struct string *to_string(struct vm_ht_item item) {
 	char buffer[MAX_STRING_SIZE];
 
 	switch(item.type) {
-		case TYPE_INT: ret = snprintf(buffer, MAX_STRING_SIZE, "%i", item.content.i); break;
-		case TYPE_DOUBLE: ret = snprintf(buffer, MAX_STRING_SIZE, "%lf", item.content.d); break;
-		case TYPE_CHAR: ret = snprintf(buffer, MAX_STRING_SIZE, "%c", item.content.c); break;
-		case TYPE_STRING:
+		case INT: ret = snprintf(buffer, MAX_STRING_SIZE, "%i", item.content.i); break;
+		case DOUBLE: ret = snprintf(buffer, MAX_STRING_SIZE, "%lf", item.content.d); break;
+		case CHAR: ret = snprintf(buffer, MAX_STRING_SIZE, "%c", item.content.c); break;
+		case STRING:
 			s->str = malloc(item.content.s->size);
 			strcpy(s->str, item.content.s->str);
 			s->size = item.content.s->size;
@@ -166,7 +166,6 @@ struct string *get_string(FILE *fp) {
 	buffer[i] = '\x00';
 
 	s->size = strlen(buffer);
-	printf("i = %i, strlen = %i\n", i, s->size);
 	s->str = malloc(s->size);
 	strcpy(s->str, buffer);
 
@@ -191,12 +190,12 @@ static inline u8 highest_precision(struct vm_ht_item a, struct vm_ht_item b) {
 	return a.type > b.type ? a.type : b.type;
 }
 
-inline void write(struct vm_ht_item item) {	
+void write(struct vm_ht_item item) {	
 	switch(item.type) {
-		case TYPE_INT: printf("%i", item.content.i); break;
-		case TYPE_DOUBLE: printf("%lf", item.content.d); break;
-		case TYPE_CHAR: printf("%c", item.content.c); break;
-		case TYPE_STRING: printf("%s", item.content.s->str); break;
+		case INT: printf("%i", item.content.i); break;
+		case DOUBLE: printf("%lf", item.content.d); break;
+		case CHAR: printf("%c", item.content.c); break;
+		case STRING: printf("%s", item.content.s->str); break;
 	}
 }
 
@@ -205,22 +204,6 @@ u16 get_u16(FILE *fp) {
 	fread(&n, sizeof(n), 1, fp);
 
 	return n;
-}
-
-u64 get_index(struct vm_ht_item *item) {
-	u64 index;
-	if (item->type == TYPE_STRING) {
-		error_exit("Vector indexing with string is not supported (yet)");
-		// index = stroul(item->content.s, NULL, 		
-	}
-
-	switch(item->type) {
-		case TYPE_INT: index = item->content.i; break;
-		case TYPE_DOUBLE: index = item->content.d; break;
-		case TYPE_CHAR: index = item->content.c; break;
-	}
-
-	return index;
 }
 
 void jump(FILE *fp, u16 address) {
@@ -244,28 +227,28 @@ void run(FILE *fp) {
 			default: printf("default at: %lu -> [%x]", ftell(fp), c); break;
 
 			case DCLI: {
-				struct vm_ht_item *var = new_vm_ht_item(TYPE_INT);
+				struct vm_ht_item *var = new_vm_ht_item(INT);
 				var->id = get_u16(fp);
 
 				vm_ht_add(ht, var);
 			} break;
 
 			case DCLD: {
-				struct vm_ht_item *var = new_vm_ht_item(TYPE_DOUBLE);
+				struct vm_ht_item *var = new_vm_ht_item(DOUBLE);
 				var->id = get_u16(fp);
 
 				vm_ht_add(ht, var);
 			} break;
 
 			case DCLC: {
-				struct vm_ht_item *var = new_vm_ht_item(TYPE_CHAR);
+				struct vm_ht_item *var = new_vm_ht_item(CHAR);
 				var->id = get_u16(fp);
 
 				vm_ht_add(ht, var);
 			} break;
 
 			case DCLS: {
-				struct vm_ht_item *var = new_vm_ht_item(TYPE_STRING);
+				struct vm_ht_item *var = new_vm_ht_item(STRING);
 				var->id = get_u16(fp);
 				var->content.s = new_string();
 
@@ -273,36 +256,36 @@ void run(FILE *fp) {
 			} break;
 
 			case DCLVI: {
-				struct vm_ht_item *var = new_vm_ht_item(TYPE_VINT);
+				struct vm_ht_item *var = new_vm_ht_item(VINT);
 				var->id = get_u16(fp);
-				var->size = get_u16(fp);
+				var->size = to_int(pop());
 				var->content.vi = malloc(sizeof(int) * var->size);
 
 				vm_ht_add(ht, var);
 			} break;
 
 			case DCLVD: {
-				struct vm_ht_item *var = new_vm_ht_item(TYPE_VDOUBLE);
+				struct vm_ht_item *var = new_vm_ht_item(VDOUBLE);
 				var->id = get_u16(fp);
-				var->size = get_u16(fp);
+				var->size = to_int(pop());
 				var->content.vd = malloc(sizeof(double) * var->size);
 
 				vm_ht_add(ht, var);
 			} break;
 		
 			case DCLVC: {
-				struct vm_ht_item *var = new_vm_ht_item(TYPE_VCHAR);
+				struct vm_ht_item *var = new_vm_ht_item(VCHAR);
 				var->id = get_u16(fp);
-				var->size = get_u16(fp);
+				var->size = to_int(pop());
 				var->content.vc = malloc(sizeof(char) * var->size);
 				
 				vm_ht_add(ht, var);
 			} break;
 
 			case DCLVS: {
-				struct vm_ht_item *var = new_vm_ht_item(TYPE_VSTRING);
+				struct vm_ht_item *var = new_vm_ht_item(VSTRING);
 				var->id = get_u16(fp);
-				var->size = get_u16(fp);
+				var->size = to_int(pop());
 				var->content.vs = malloc(sizeof(struct string *) * var->size);
 
 				vm_ht_add(ht,  var);
@@ -311,17 +294,56 @@ void run(FILE *fp) {
 			case PUSH: {
 				struct vm_ht_item *var = get_var(fp);
 				struct vm_ht_item *item = malloc(sizeof(struct vm_ht_item));
-				var->type = item->type;
-				var->content = item->content;
+				item->type = var->type;
+				item->content = var->content;
 
 				push(item);
 			} break;
 
 			case PUSHV: {
-				struct vm_ht_item index_item = pop();
-				u16 index = get_index(&index_item);
-
 				struct vm_ht_item *var = get_var(fp);
+				int index = to_int(pop());
+				if (index > var->size)
+					error_exit("[PUSHV] Index out of bounds");
+
+				struct vm_ht_item *item = new_vm_ht_item(var->type - 4);	
+				switch(var->type) {
+					case VCHAR: item->content.c = var->content.vc[index]; break;
+					case VINT: item->content.i = var->content.vi[index]; break;
+					case VDOUBLE: item->content.d = var->content.vd[index]; break;
+					case VSTRING: item->content.s = var->content.vs[index]; break;
+					default: error_exit("[PUSHV] Default case"); break;
+				}
+
+				push(item);
+			} break;
+
+			case PUSHKI: {
+				struct vm_ht_item *item = new_vm_ht_item(INT);
+				fread(&item->content.i, sizeof(int), 1, fp);
+
+				push(item);
+			} break;
+
+			case PUSHKD: {
+				struct vm_ht_item *item = new_vm_ht_item(DOUBLE);
+				fread(&item->content.d, sizeof(double), 1, fp);
+
+				push(item);
+			} break;
+
+			case PUSHKC: {
+				struct vm_ht_item *item = new_vm_ht_item(CHAR);
+				fread(&item->content.c, sizeof(char), 1, fp);
+
+				push(item);
+			} break;
+
+			case PUSHKS: {
+				struct vm_ht_item *item = new_vm_ht_item(STRING);
+				item->content.s = get_string(fp);
+
+				push(item);
 			} break;
 
 			case POPI: {
@@ -353,24 +375,39 @@ void run(FILE *fp) {
 			} break;
 
 			case POPVI: {
-				/*
 				struct vm_ht_item *var = get_var(fp);
-				struct vm_ht_item item = pop();
-				u16 index = get_u16(fp);
+				int index = to_int(pop());
 				if (index > var->size)
 					error_exit("Index out of bounds");
 
-				var->content.vi[index] = to_int(item);
-				*/
+				var->content.vi[index] = to_int(pop());
 			} break;
 
 			case POPVD: {
+				struct vm_ht_item *var = get_var(fp);
+				int index = to_int(pop());
+				if (index > var->size)
+					error_exit("Index out of bounds");
+
+				var->content.vd[index] = to_double(pop());
 			} break;
 
 			case POPVC: {
+				struct vm_ht_item *var = get_var(fp);
+				int index = to_int(pop());
+				if (index > var->size)
+					error_exit("Index out of bounds");
+
+				var->content.vc[index] = to_char(pop());
 			} break;
 
 			case POPVS: {
+				struct vm_ht_item *var = get_var(fp);
+				int index = to_int(pop());
+				if (index > var->size)
+					error_exit("Index out of bounds");
+
+				var->content.vs[index] = to_string(pop());
 			} break;
 
 			case ADD: {
@@ -379,13 +416,15 @@ void run(FILE *fp) {
 
 				struct vm_ht_item *r = new_vm_ht_item(highest_precision(a, b));
 				switch(r->type) {
-					case TYPE_CHAR: r->content.c = to_char(a) + to_char(b); break;
-					case TYPE_INT: r->content.i = to_int(a) + to_int(b); break;
-					case TYPE_DOUBLE: r->content.d = to_double(a) + to_double(b); break;
-					case TYPE_STRING: {
+					case CHAR: r->content.c = to_char(a) + to_char(b); break;
+					case INT: r->content.i = to_int(a) + to_int(b); break;
+					case DOUBLE: r->content.d = to_double(a) + to_double(b); break;
+					case STRING: {
 						struct string *a_s = to_string(a);
 						struct string *b_s = to_string(b);
-						r->content.s->str = malloc(a_s->size + b_s->size);
+						r->content.s = malloc(sizeof(struct string *));
+						r->content.s->size = a_s->size + b_s->size;
+						r->content.s->str = malloc(r->content.s->size);
 						strcpy(r->content.s->str, a_s->str);
 						strcat(r->content.s->str, b_s->str);
 					} break;
@@ -401,9 +440,9 @@ void run(FILE *fp) {
 
 				struct vm_ht_item *r = new_vm_ht_item(highest_precision(a, b));
 				switch(r->type) {
-					case TYPE_CHAR: r->content.c = to_char(a) - to_char(b); break;
-					case TYPE_INT: r->content.i = to_int(a) - to_int(b); break;
-					case TYPE_DOUBLE: r->content.d = to_double(a) - to_double(b); break;
+					case CHAR: r->content.c = to_char(a) - to_char(b); break;
+					case INT: r->content.i = to_int(a) - to_int(b); break;
+					case DOUBLE: r->content.d = to_double(a) - to_double(b); break;
 					default: error_exit("[SUB] Invalid operands"); break;
 				}
 
@@ -416,9 +455,9 @@ void run(FILE *fp) {
 
 				struct vm_ht_item *r = new_vm_ht_item(highest_precision(a, b));
 				switch(r->type) {
-					case TYPE_CHAR: r->content.c = to_char(a) * to_char(b); break;
-					case TYPE_INT: r->content.i = to_int(a) * to_int(b); break;
-					case TYPE_DOUBLE: r->content.d = to_double(a) * to_double(b); break;
+					case CHAR: r->content.c = to_char(a) * to_char(b); break;
+					case INT: r->content.i = to_int(a) * to_int(b); break;
+					case DOUBLE: r->content.d = to_double(a) * to_double(b); break;
 					default: error_exit("[MOV] Invalid operands"); break;
 				}
 
@@ -431,9 +470,9 @@ void run(FILE *fp) {
 	
 				struct vm_ht_item *r = new_vm_ht_item(highest_precision(a, b));
 				switch(r->type) {
-					case TYPE_CHAR: r->content.c = to_char(a) / to_char(b); break;
-					case TYPE_INT: r->content.i = to_int(a) / to_int(b); break;
-					case TYPE_DOUBLE: r->content.d = to_double(a) / to_double(b); break;
+					case CHAR: r->content.c = to_char(a) / to_char(b); break;
+					case INT: r->content.i = to_int(a) / to_int(b); break;
+					case DOUBLE: r->content.d = to_double(a) / to_double(b); break;
 					default: error_exit("[DIV] Invalid operands"); break;
 				}
 
@@ -445,7 +484,7 @@ void run(FILE *fp) {
 				struct vm_ht_item a = pop();
 
 				switch(a.type) {
-					case TYPE_INT: a.content.i %= b.content.i; break;
+					case INT: a.content.i %= b.content.i; break;
 					default: error_exit("Invalid operands"); break;
 				}
 
@@ -462,7 +501,7 @@ void run(FILE *fp) {
 				fgets(buffer, 64, stdin);
 
 				struct vm_ht_item *item = malloc(sizeof(struct vm_ht_item));
-				item->type = TYPE_INT;
+				item->type = INT;
 				item->content.i = atoi(buffer);
 
 				push(item);
@@ -473,7 +512,7 @@ void run(FILE *fp) {
 				fgets(buffer, 64, stdin);
 
 				struct vm_ht_item *item = malloc(sizeof(struct vm_ht_item));
-				item->type = TYPE_DOUBLE;
+				item->type = DOUBLE;
 				item->content.d = atof(buffer);
 
 				push(item);
@@ -483,7 +522,7 @@ void run(FILE *fp) {
 				char c = getchar();
 
 				struct vm_ht_item *item = malloc(sizeof(struct vm_ht_item));
-				item->type = TYPE_CHAR;
+				item->type = CHAR;
 				item->content.c = c;
 
 				push(item);
@@ -494,50 +533,9 @@ void run(FILE *fp) {
 				fgets(buffer, MAX_STRING_SIZE, stdin);
 
 				struct vm_ht_item *item = malloc(sizeof(struct vm_ht_item));
-				item->type = TYPE_STRING;
+				item->type = STRING;
 				item->content.s->size = strlen(buffer);
 				item->content.s->str = buffer;
-
-				push(item);
-			} break;
-
-			case PUSHKI: {
-				struct vm_ht_item *item = malloc(sizeof(struct vm_ht_item));
-				item->type = TYPE_INT;
-
-				int i;
-				fread(&i, sizeof(int), 1, fp);
-				item->content.i = i;
-
-				push(item);
-			} break;
-
-			case PUSHKD: {
-				struct vm_ht_item *item = malloc(sizeof(struct vm_ht_item));
-				item->type = TYPE_DOUBLE;
-
-				double d;
-				fread(&d, sizeof(double), 1, fp);
-				item->content.d = d;
-
-				push(item);
-			} break;
-
-			case PUSHKC: {
-				struct vm_ht_item *item = malloc(sizeof(struct vm_ht_item));
-				item->type = TYPE_CHAR;
-
-				char c;
-				fread(&c, sizeof(char), 1, fp);
-				item->content.c = c;
-
-				push(item);
-			} break;
-
-			case PUSHKS: {
-				struct vm_ht_item *item = malloc(sizeof(struct vm_ht_item));
-				item->type = TYPE_STRING;
-				item->content.s = get_string(fp);
 
 				push(item);
 			} break;
