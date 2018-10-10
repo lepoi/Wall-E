@@ -41,11 +41,11 @@
 #define	DIV		27
 #define MOD		28
 #define JMP		29
-#define JPEQ	30
+#define JPE		30
 #define JPNE	31
-#define JPGT	32
+#define JPG		32
 #define JPGE	33
-#define JPLT	34
+#define JPL		34
 #define JPLE	35
 #define RDI		36
 #define RDD		37
@@ -206,8 +206,13 @@ u16 get_u16(FILE *fp) {
 	return n;
 }
 
-void jump(FILE *fp, short address) {
-	fseek(fp, -4 + address + 2, SEEK_CUR);
+void jump(FILE *fp) {
+	short address;
+	fread(&address, sizeof(short), 1, fp);
+
+	if (address < 0)
+		address -= 3;
+	fseek(fp, address, SEEK_CUR);
 }
 
 struct vm_ht_item *new_vm_ht_item(u8 type) {
@@ -490,15 +495,120 @@ void run(FILE *fp) {
 				push(&a);
 			} break;
 
-			case JMP: {
-				short address;
+			case JMP: jump(fp); break;
 
-				fread(&address, sizeof(short), 1, fp);
-				jump(fp, address);
+			case JPE: {
+				struct vm_ht_item b = pop();
+				struct vm_ht_item a = pop();
+				u8 type = highest_precision(a, b);
+
+				int res;
+				switch(type) {
+					case CHAR: res = to_char(a) == to_char(b); break;
+					case INT: res = to_int(a) == to_int(b); break;
+					case DOUBLE: res = to_double(a) == to_double(b); break;
+					case STRING:
+						res = strcmp(to_string(a)->str, to_string(b)->str) == 0;
+					break;
+				}
+
+				if (res)
+					jump(fp);
 			} break;
 
-			case JPGT: {
-				
+			case JPNE: {
+				struct vm_ht_item b = pop();
+				struct vm_ht_item a = pop();
+				u8 type = highest_precision(a, b);
+
+				int res;
+				switch(type) {
+					case CHAR: res = to_char(a) != to_char(b); break;
+					case INT: res = to_int(a) != to_int(b); break;
+					case DOUBLE: res = to_double(a) != to_double(b); break;
+					case STRING:
+						res = strcmp(to_string(a)->str, to_string(b)->str) != 0;
+					break;
+				}
+
+				if (res)
+					jump(fp);
+			} break;
+
+			case JPG: {
+				struct vm_ht_item b = pop();
+				struct vm_ht_item a = pop();
+				u8 type = highest_precision(a, b);
+
+				int res;
+				switch(type) {
+					case CHAR: res = to_char(a) > to_char(b); break;
+					case INT: res = to_int(a) > to_int(b); break;
+					case DOUBLE: res = to_double(a) > to_double(b); break;
+					case STRING:
+						res = strcmp(to_string(a)->str, to_string(b)->str) > 0;
+					break;
+				}
+
+				if (res)
+					jump(fp);
+			} break;
+
+			case JPGE: {
+				struct vm_ht_item b = pop();
+				struct vm_ht_item a = pop();
+				u8 type = highest_precision(a, b);
+
+				int res;
+				switch(type) {
+					case CHAR: res = to_char(a) >= to_char(b); break;
+					case INT: res = to_int(a) >= to_int(b); break;
+					case DOUBLE: res = to_double(a) >= to_double(b); break;
+					case STRING:
+						res = strcmp(to_string(a)->str, to_string(b)->str) >= 0;
+					break;
+				}
+
+				if (res)
+					jump(fp);
+			} break;
+
+			case JPL: {
+				struct vm_ht_item b = pop();
+				struct vm_ht_item a = pop();
+				u8 type = highest_precision(a, b);
+
+				int res;
+				switch(type) {
+					case CHAR: res = to_char(a) < to_char(b); break;
+					case INT: res = to_int(a) < to_int(b); break;
+					case DOUBLE: res = to_double(a) < to_double(b); break;
+					case STRING:
+						res = strcmp(to_string(a)->str, to_string(b)->str) < 0;
+					break;
+				}
+
+				if (res)
+					jump(fp);
+			} break;
+
+			case JPLE: {
+				struct vm_ht_item b = pop();
+				struct vm_ht_item a = pop();
+				u8 type = highest_precision(a, b);
+
+				int res;
+				switch(type) {
+					case CHAR: res = to_char(a) <= to_char(b); break;
+					case INT: res = to_int(a) <= to_int(b); break;
+					case DOUBLE: res = to_double(a) <= to_double(b); break;
+					case STRING:
+						res = strcmp(to_string(a)->str, to_string(b)->str) <= 0;
+					break;
+				}
+
+				if (res)
+					jump(fp);
 			} break;
 
 			case RDI: {

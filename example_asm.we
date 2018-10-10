@@ -1,8 +1,11 @@
-DCLD a
-PUSHKS "5.8"
-POPD a
+DCLI a
+PUSHKS "27"
+POPI a
 
 PUSH a
-WRT
+WRTS "Input a number: "
+RDI
+JPGE 1
+EXT
+WRTS "Number is less"
 WRTLN
-JMP -7
