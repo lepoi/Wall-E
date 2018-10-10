@@ -41,19 +41,20 @@
 #define	DIV		27
 #define MOD		28
 #define JMP		29
-#define JPE		30
-#define JPNE	31
-#define JPG		32
-#define JPGE	33
-#define JPL		34
-#define JPLE	35
-#define RDI		36
-#define RDD		37
-#define RDC		38
-#define RDS		39
-#define WRT		40
-#define WRTS	41
-#define WRTLN	42
+#define JMPC	30
+#define CEQ		31
+#define CNE		32
+#define CGT		33
+#define CGE		34
+#define CLT		35
+#define CLE		36
+#define RDI		37
+#define RDD		38
+#define RDC		39
+#define RDS		40
+#define WRT		41
+#define WRTS	42
+#define WRTLN	43
 
 #define MAX_STACK_SIZE	64
 #define MAX_STRING_SIZE 255
@@ -497,118 +498,120 @@ void run(FILE *fp) {
 
 			case JMP: jump(fp); break;
 
-			case JPE: {
-				struct vm_ht_item b = pop();
-				struct vm_ht_item a = pop();
-				u8 type = highest_precision(a, b);
 
-				int res;
-				switch(type) {
-					case CHAR: res = to_char(a) == to_char(b); break;
-					case INT: res = to_int(a) == to_int(b); break;
-					case DOUBLE: res = to_double(a) == to_double(b); break;
-					case STRING:
-						res = strcmp(to_string(a)->str, to_string(b)->str) == 0;
-					break;
-				}
+			case JMPC: {
+				struct vm_ht_item item = pop();
 
-				if (res)
+				if (to_int(item).content.i == 1)
 					jump(fp);
 			} break;
 
-			case JPNE: {
+			case CEQ: {
 				struct vm_ht_item b = pop();
 				struct vm_ht_item a = pop();
 				u8 type = highest_precision(a, b);
 
-				int res;
+				struct vm_ht_item *item = new_vm_ht_item(INT);
 				switch(type) {
-					case CHAR: res = to_char(a) != to_char(b); break;
-					case INT: res = to_int(a) != to_int(b); break;
-					case DOUBLE: res = to_double(a) != to_double(b); break;
+					case CHAR: item->content.i = to_char(a) == to_char(b); break;
+					case INT: item->content.i = to_int(a) == to_int(b); break;
+					case DOUBLE: item->content.i = to_double(a) == to_double(b); break;
 					case STRING:
-						res = strcmp(to_string(a)->str, to_string(b)->str) != 0;
+						item->content.i = strcmp(to_string(a)->str, to_string(b)->str) == 0;
 					break;
 				}
 
-				if (res)
-					jump(fp);
+				push(item);
 			} break;
 
-			case JPG: {
+			case CNE: {
 				struct vm_ht_item b = pop();
 				struct vm_ht_item a = pop();
 				u8 type = highest_precision(a, b);
 
-				int res;
+				struct vm_ht_item *item = new_vm_ht_item(INT);
 				switch(type) {
-					case CHAR: res = to_char(a) > to_char(b); break;
-					case INT: res = to_int(a) > to_int(b); break;
-					case DOUBLE: res = to_double(a) > to_double(b); break;
+					case CHAR: item->content.i = to_char(a) != to_char(b); break;
+					case INT: item->content.i = to_int(a) != to_int(b); break;
+					case DOUBLE: item->content.i = to_double(a) != to_double(b); break;
 					case STRING:
-						res = strcmp(to_string(a)->str, to_string(b)->str) > 0;
+						item->content.i = strcmp(to_string(a)->str, to_string(b)->str) != 0;
 					break;
 				}
 
-				if (res)
-					jump(fp);
+				push(item);
 			} break;
 
-			case JPGE: {
+			case CGT: {
 				struct vm_ht_item b = pop();
 				struct vm_ht_item a = pop();
 				u8 type = highest_precision(a, b);
 
-				int res;
+				struct vm_ht_item *item = new_vm_ht_item(INT);
 				switch(type) {
-					case CHAR: res = to_char(a) >= to_char(b); break;
-					case INT: res = to_int(a) >= to_int(b); break;
-					case DOUBLE: res = to_double(a) >= to_double(b); break;
+					case CHAR: item->content.i = to_char(a) > to_char(b); break;
+					case INT: item->content.i = to_int(a) > to_int(b); break;
+					case DOUBLE: item->content.i = to_double(a) > to_double(b); break;
 					case STRING:
-						res = strcmp(to_string(a)->str, to_string(b)->str) >= 0;
+						item->content.i = strcmp(to_string(a)->str, to_string(b)->str) > 0;
 					break;
 				}
 
-				if (res)
-					jump(fp);
+				push(item);
 			} break;
 
-			case JPL: {
+			case CGE: {
 				struct vm_ht_item b = pop();
 				struct vm_ht_item a = pop();
 				u8 type = highest_precision(a, b);
 
-				int res;
+				struct vm_ht_item *item = new_vm_ht_item(INT);
 				switch(type) {
-					case CHAR: res = to_char(a) < to_char(b); break;
-					case INT: res = to_int(a) < to_int(b); break;
-					case DOUBLE: res = to_double(a) < to_double(b); break;
+					case CHAR: item->content.i = to_char(a) >= to_char(b); break;
+					case INT: item->content.i = to_int(a) >= to_int(b); break;
+					case DOUBLE: item->content.i = to_double(a) >= to_double(b); break;
 					case STRING:
-						res = strcmp(to_string(a)->str, to_string(b)->str) < 0;
+						item->content.i = strcmp(to_string(a)->str, to_string(b)->str) >= 0;
 					break;
 				}
 
-				if (res)
-					jump(fp);
+				push(item);
 			} break;
 
-			case JPLE: {
+			case CLT: {
 				struct vm_ht_item b = pop();
 				struct vm_ht_item a = pop();
 				u8 type = highest_precision(a, b);
 
-				int res;
+				struct vm_ht_item *item = new_vm_ht_item(INT);
 				switch(type) {
-					case CHAR: res = to_char(a) <= to_char(b); break;
-					case INT: res = to_int(a) <= to_int(b); break;
-					case DOUBLE: res = to_double(a) <= to_double(b); break;
+					case CHAR: item->content.i = to_char(a) < to_char(b); break;
+					case INT: item->content.i = to_int(a) < to_int(b); break;
+					case DOUBLE: item->content.i = to_double(a) < to_double(b); break;
 					case STRING:
-						res = strcmp(to_string(a)->str, to_string(b)->str) <= 0;
+						item->content.i = strcmp(to_string(a)->str, to_string(b)->str) < 0;
 					break;
 				}
 
-				if (res)
-					jump(fp);
+				push(item);
+			} break;
+
+			case CLE: {
+				struct vm_ht_item b = pop();
+				struct vm_ht_item a = pop();
+				u8 type = highest_precision(a, b);
+
+				struct vm_ht_item *item = new_vm_ht_item(INT);
+				switch(type) {
+					case CHAR: item->content.i = to_char(a) <= to_char(b); break;
+					case INT: item->content.i = to_int(a) <= to_int(b); break;
+					case DOUBLE: item->content.i = to_double(a) <= to_double(b); break;
+					case STRING:
+						item->content.i = strcmp(to_string(a)->str, to_string(b)->str) <= 0;
+					break;
+				}
+
+				push(item);
 			} break;
 
 			case RDI: {
