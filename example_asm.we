@@ -1,7 +1,8 @@
 DCLD a
 PUSHKS "5.8"
 POPD a
-PUSH a
 
+PUSH a
 WRT
 WRTLN
+JMP -7

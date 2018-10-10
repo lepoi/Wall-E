@@ -102,5 +102,13 @@ char label(FILE *fp, struct asm_state *state) {
 }
 
 char addr(FILE *fp, struct asm_state *state) {
+	short address;
+
+	if (!fscanf(fp, "%hd", &address)) {
+		printf("Expected short");
+		return 0;
+	}
+
+	fwrite(&address, sizeof(short), 1, state->fp_out);
 	return 0;
 }

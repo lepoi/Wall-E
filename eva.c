@@ -206,8 +206,8 @@ u16 get_u16(FILE *fp) {
 	return n;
 }
 
-void jump(FILE *fp, u16 address) {
-	fseek(fp, HEADER_OFFSET + address, SEEK_SET);
+void jump(FILE *fp, short address) {
+	fseek(fp, -4 + address + 2, SEEK_CUR);
 }
 
 struct vm_ht_item *new_vm_ht_item(u8 type) {
@@ -218,13 +218,12 @@ struct vm_ht_item *new_vm_ht_item(u8 type) {
 }
 
 void run(FILE *fp) {
-	fseek(fp, HEADER_OFFSET, SEEK_SET);
 	char c;
 	while ((c = fgetc(fp)) != EOF) {
 		switch (c) {
-			case EXT: exit(0); break;
+			case EXT: printf("Exit!\n"); exit(0); break;
 
-			default: printf("default at: %lu -> [%x]", ftell(fp), c); break;
+			default: printf("default at: %lu -> [%x]\n", ftell(fp), c); break;
 
 			case DCLI: {
 				struct vm_ht_item *var = new_vm_ht_item(INT);
@@ -492,7 +491,9 @@ void run(FILE *fp) {
 			} break;
 
 			case JMP: {
-				u16 address = get_u16(fp);
+				short address;
+
+				fread(&address, sizeof(short), 1, fp);
 				jump(fp, address);
 			} break;
 
@@ -557,11 +558,14 @@ void run(FILE *fp) {
 
 int main() {
 	FILE *fp = fopen("out.eva", "rb+");
+	setvbuf(fp, NULL, _IONBF, 0);
+
 	if (!fp) {
 		printf("Input file not found\n");
 		exit(1);
 	}
-	
+
+	fseek(fp, HEADER_OFFSET, SEEK_SET);
 	ht = new_vm_ht(64);
 	run(fp);
 }
