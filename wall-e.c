@@ -107,6 +107,7 @@ int main(int argc, char *args[]) {
 	DECLARE_INSTRUCTION(41, "WRT", NULL);
 	DECLARE_INSTRUCTION(42, "WRTS", kstring);
 	DECLARE_INSTRUCTION(43, "WRTLN", NULL);
+	DECLARE_INSTRUCTION(44, "FREE", var);
 
 	if (!args[1]) {
 		printf("Needs more arguments\n");

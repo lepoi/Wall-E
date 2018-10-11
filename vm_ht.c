@@ -38,3 +38,21 @@ struct vm_ht_item *vm_ht_get(struct vm_ht *ht, unsigned short id) {
 
 	return current;
 }
+
+void vm_ht_del(struct vm_ht *ht, u16 id) {
+	int index = id % ht->size;
+	struct vm_ht_item *current = ht->items[index];
+	if (current && current->id == id) {
+		ht->items[index] = current->next;
+		return;
+	}
+
+	while (current->next) {
+		if (((struct vm_ht_item *) (current->next))->id == id) {
+			current->next = ((struct vm_ht_item *) (current->next))->next;
+			break;
+		}
+
+		current = current->next;
+	}
+}

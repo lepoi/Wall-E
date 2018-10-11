@@ -55,6 +55,7 @@
 #define WRT		41
 #define WRTS	42
 #define WRTLN	43
+#define FREE	44		
 
 #define MAX_STACK_SIZE	64
 #define MAX_STRING_SIZE 255
@@ -673,6 +674,10 @@ void run(FILE *fp) {
 			} break;
 
 			case WRTLN: printf("\n"); break;
+
+			case FREE: {
+
+			} break;
 		}
 	}
 }

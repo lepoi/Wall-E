@@ -26,3 +26,4 @@ struct vm_ht {
 struct vm_ht *new_vm_ht(u8 bucket_size);
 void vm_ht_add(struct vm_ht *ht, struct vm_ht_item *item);
 struct vm_ht_item *vm_ht_get(struct vm_ht *ht, unsigned short id);
+void vm_ht_item_del(struct vm_ht *ht, u16 id);
