@@ -1,11 +1,41 @@
-DCLI a
-PUSHKS "27"
-POPI a
+PUSHKI 10
+DCLVS arr
 
-PUSH a
-WRTS "Input a number: "
-RDI
-JPGE 1
-EXT
-WRTS "Number is less"
+DCLI i
+PUSHKI 0
+POPI i
+
+PUSH i
+PUSHKI 3
+CGE
+JMPC 24
+RDS
+PUSH i
+POPVS arr
+PUSH i
+PUSHKI 1
+ADD
+POPI i
+JMP -33
 WRTLN
+
+WRTS "Content:"
+WRTLN
+
+PUSHKI 0
+POPI i
+
+PUSH i
+PUSHKI 3
+CGE
+JMPC 25
+
+PUSH i
+PUSHV arr
+WRT
+
+PUSH i
+PUSHKI 1
+ADD
+POPI i
+JMP -33

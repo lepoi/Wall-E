@@ -141,7 +141,6 @@ struct string *to_string(struct vm_ht_item item) {
 	s->str = malloc(ret);
 	strcpy(s->str, buffer);
 	s->size = ret;
-
 	return s;
 }
 
@@ -150,8 +149,9 @@ struct vm_ht_item *get_var(FILE *fp) {
 	fread(&id, sizeof(u16), 1, fp);
 
 	struct vm_ht_item *item = vm_ht_get(ht, id);
-	if (!item)
+	if (!item) {
 		error_exit("Variable not found");
+	}
 
 	return item;
 }
@@ -207,12 +207,16 @@ u16 get_u16(FILE *fp) {
 	return n;
 }
 
-void jump(FILE *fp) {
-	short address;
-	fread(&address, sizeof(short), 1, fp);
+int get_int(FILE *fp) {
+	int n;
+	fread(&n, 4, 1, fp);
 
+	return n;
+}
+
+void jump(FILE *fp, int address) {
 	if (address < 0)
-		address -= 3;
+		address -= 5;
 	fseek(fp, address, SEEK_CUR);
 }
 
@@ -227,7 +231,7 @@ void run(FILE *fp) {
 	char c;
 	while ((c = fgetc(fp)) != EOF) {
 		switch (c) {
-			case EXT: printf("Exit!\n"); exit(0); break;
+			case EXT: exit(0); break;
 
 			default: printf("default at: %lu -> [%x]\n", ftell(fp), c); break;
 
@@ -496,14 +500,17 @@ void run(FILE *fp) {
 				push(&a);
 			} break;
 
-			case JMP: jump(fp); break;
-
+			case JMP: {
+				int address = get_int(fp);
+				jump(fp, address);
+			} break;
 
 			case JMPC: {
 				struct vm_ht_item item = pop();
 
-				if (to_int(item).content.i == 1)
-					jump(fp);
+				int address = get_int(fp);
+				if (to_int(item) == 1)
+					jump(fp, address);
 			} break;
 
 			case CEQ: {
@@ -648,6 +655,7 @@ void run(FILE *fp) {
 				fgets(buffer, MAX_STRING_SIZE, stdin);
 
 				struct vm_ht_item *item = new_vm_ht_item(STRING);
+				item->content.s = malloc(sizeof(struct string));
 				item->content.s->size = strlen(buffer);
 				item->content.s->str = buffer;
 

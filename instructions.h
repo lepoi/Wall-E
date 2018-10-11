@@ -34,7 +34,7 @@ char kint(FILE *fp, struct asm_state *state) {
 	int buffer;
 
 	if (fscanf(fp, "%i", &buffer) != 1) {
-		printf("Expected constant int\n");
+		printf("[kint] Expected constant int\n");
 		return 1;
 	}
 
