@@ -55,24 +55,22 @@ char kdouble(FILE *fp, struct asm_state *state) {
 }
 
 char kchar(FILE *fp, struct asm_state *state) {
-	char buffer[2];
+	char c;
 
-	if (fscanf(fp, "%s", buffer) != 1) {
+	if (fscanf(fp, " \'%c\'", &c) != 1) {
 		printf("Expected constant char\n");
 		return 1;
 	}
 
-	fwrite(&buffer[0], sizeof(char), 1, state->fp_out);
+	fwrite(&c, sizeof(char), 1, state->fp_out);
 	return 0;
 }
 
 char kstring(FILE *fp, struct asm_state *state) {
-	char buffer[256];
+	char buffer[255];
 
-	int r = fscanf(fp, " \"%256[^\"]\"", buffer);
-
-	int len = strlen(buffer);
-	fwrite(&buffer, len + 1, 1, state->fp_out);
+	fscanf(fp, " \"%255[^\"]\"", buffer);
+	fwrite(&buffer, strlen(buffer) + 1, 1, state->fp_out);
 	return 0;
 }
 
@@ -84,31 +82,6 @@ char var(FILE *fp, struct asm_state *state) {
 		return 1;
 	}
 
-	fwrite(&item->opcode, 2, 1, state->fp_out);
-	return 0;
-}
-
-char label(FILE *fp, struct asm_state *state) {
-	char *label_name = get_name(fp, state);
-	struct ht_item *item = lookup_item(state->labels, label_name);
-	if (!item) {
-		struct ht_item *add = new_ht_item(0, label_name, NULL);
-		hash_item(state->labels, add);
-		return 0;
-	}
-
-	fwrite(&item->opcode, sizeof(item->opcode), 1, state->fp_out);
-	return 0;
-}
-
-char addr(FILE *fp, struct asm_state *state) {
-	short address;
-
-	if (!fscanf(fp, "%hd", &address)) {
-		printf("Expected short");
-		return 0;
-	}
-
-	fwrite(&address, sizeof(short), 1, state->fp_out);
+	fwrite(&item->opcode, sizeof(u16), 1, state->fp_out);
 	return 0;
 }

@@ -5,14 +5,13 @@
 struct vm_ht *new_vm_ht(u8 bucket_size) {
 	struct vm_ht *ht = malloc(sizeof(struct vm_ht));
 	ht->size = bucket_size;
-	ht->count = 0;
 	ht->items = calloc((size_t) ht->size, sizeof(struct vm_ht_item *));
 
 	return ht;
 }
 
 void vm_ht_add(struct vm_ht *ht, struct vm_ht_item *item) {
-	int index = ht->count++ % ht->size;
+	int index = item->id % ht->size;
 	struct vm_ht_item *stop = ht->items[index];
 
 	if (!stop)

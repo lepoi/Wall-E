@@ -150,9 +150,8 @@ struct vm_ht_item *get_var(FILE *fp) {
 	fread(&id, sizeof(u16), 1, fp);
 
 	struct vm_ht_item *item = vm_ht_get(ht, id);
-	if (!item) {
+	if (!item)
 		error_exit("Variable not found");
-	}
 
 	return item;
 }
@@ -215,6 +214,11 @@ int get_int(FILE *fp) {
 	return n;
 }
 
+void check_exist(u16 id) {
+	if (vm_ht_get(ht, id))
+		error_exit("Redeclaration of variable");
+}
+
 void jump(FILE *fp, int address) {
 	if (address < 0)
 		address -= 5;
@@ -237,37 +241,52 @@ void run(FILE *fp) {
 			default: printf("default at: %lu -> [%x]\n", ftell(fp), c); break;
 
 			case DCLI: {
+				u16 id = get_u16(fp);
+				check_exist(id);
+
 				struct vm_ht_item *var = new_vm_ht_item(INT);
-				var->id = get_u16(fp);
+				var->id = id;
 
 				vm_ht_add(ht, var);
 			} break;
 
 			case DCLD: {
+				u16 id = get_u16(fp);
+				check_exist(id);
+
 				struct vm_ht_item *var = new_vm_ht_item(DOUBLE);
-				var->id = get_u16(fp);
+				var->id = id;
 
 				vm_ht_add(ht, var);
 			} break;
 
 			case DCLC: {
+				u16 id = get_u16(fp);
+				check_exist(id);
+
 				struct vm_ht_item *var = new_vm_ht_item(CHAR);
-				var->id = get_u16(fp);
+				var->id = id;
 
 				vm_ht_add(ht, var);
 			} break;
 
 			case DCLS: {
+				u16 id = get_u16(fp);
+				check_exist(id);
+
 				struct vm_ht_item *var = new_vm_ht_item(STRING);
-				var->id = get_u16(fp);
+				var->id = id;
 				var->content.s = new_string();
 
 				vm_ht_add(ht, var);
 			} break;
 
 			case DCLVI: {
+				u16 id = get_u16(fp);
+				check_exist(id);
+
 				struct vm_ht_item *var = new_vm_ht_item(VINT);
-				var->id = get_u16(fp);
+				var->id = id;
 				var->size = to_int(pop());
 				var->content.vi = malloc(sizeof(int) * var->size);
 
@@ -275,8 +294,11 @@ void run(FILE *fp) {
 			} break;
 
 			case DCLVD: {
+				u16 id = get_u16(fp);
+				check_exist(id);
+
 				struct vm_ht_item *var = new_vm_ht_item(VDOUBLE);
-				var->id = get_u16(fp);
+				var->id = id;
 				var->size = to_int(pop());
 				var->content.vd = malloc(sizeof(double) * var->size);
 
@@ -285,7 +307,10 @@ void run(FILE *fp) {
 		
 			case DCLVC: {
 				struct vm_ht_item *var = new_vm_ht_item(VCHAR);
-				var->id = get_u16(fp);
+				u16 id = get_u16(fp);
+				check_exist(id);
+
+				var->id = id;
 				var->size = to_int(pop());
 				var->content.vc = malloc(sizeof(char) * var->size);
 				
@@ -293,8 +318,11 @@ void run(FILE *fp) {
 			} break;
 
 			case DCLVS: {
+				u16 id = get_u16(fp);
+				check_exist(id);
+
 				struct vm_ht_item *var = new_vm_ht_item(VSTRING);
-				var->id = get_u16(fp);
+				var->id = id;
 				var->size = to_int(pop());
 				var->content.vs = malloc(sizeof(struct string *) * var->size);
 
@@ -510,7 +538,7 @@ void run(FILE *fp) {
 				struct vm_ht_item item = pop();
 
 				int address = get_int(fp);
-				if (to_int(item) == 1)
+				if (to_int(item) != 0)
 					jump(fp, address);
 			} break;
 
@@ -675,9 +703,7 @@ void run(FILE *fp) {
 
 			case WRTLN: printf("\n"); break;
 
-			case FREE: {
-
-			} break;
+			case FREE: vm_ht_del(ht, get_u16(fp)); break;
 		}
 	}
 }
