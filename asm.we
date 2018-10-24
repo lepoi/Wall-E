@@ -1,11 +1,2 @@
-DCLI hola
-PUSHKI 5
-PUSHKI 1
-ADD
-POPI hola
-PUSHKI 1
-PUSHKI 3
-ADD
-WRT
-PUSHKC 'c'
+PUSHKS "\nhola\n\n"
 WRT

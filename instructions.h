@@ -55,22 +55,47 @@ char kdouble(FILE *fp, struct asm_state *state) {
 }
 
 char kchar(FILE *fp, struct asm_state *state) {
-	char c;
+	char buf[3];
 
-	if (fscanf(fp, " \'%c\'", &c) != 1) {
+	if (fscanf(fp, " \'%2s\'", buf) != 1) {
 		printf("Expected constant char\n");
 		return 1;
 	}
+	
+	char c;
+	if (buf[0] == '\\') {
+		switch(buf[1]) {
+			case 'n': c = '\n'; break;
+			default: printf("Expected constant char\n"); break;
+		}
+	} else
+		c = buf[0];
 
 	fwrite(&c, sizeof(char), 1, state->fp_out);
 	return 0;
 }
 
 char kstring(FILE *fp, struct asm_state *state) {
-	char buffer[255];
+	char buf[257];
+	char wbuf[257];
+	int i = 0;
+	int wi = 0;
 
-	fscanf(fp, " \"%255[^\"]\"", buffer);
-	fwrite(&buffer, strlen(buffer) + 1, 1, state->fp_out);
+	fscanf(fp, " \"%256[^\"]\"", buf);
+	char c;
+	while ((c = buf[i++]) != '\0') {
+		if (c == '\\') {
+			switch (c = buf[i++]) {
+				case 'n': c = '\n'; break;
+				default: c = '\\'; i--; break;
+			}
+		}
+		
+		wbuf[wi++] = c;
+	}
+	buf[wi] = '\0';
+	
+	fwrite(wbuf, strlen(wbuf) + 1, 1, state->fp_out);
 	return 0;
 }
 
