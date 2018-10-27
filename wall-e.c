@@ -12,21 +12,25 @@
 char declare_label(FILE *fp, struct asm_state *state, char *buffer) {
 	struct ht_item *item = lookup_item(state->labels, buffer);
 	if (item) {
-		if (item->opcode != 0) {
+		if (item->opcode == 1) {
 			error_log(state->line_number, "Label "C_BLU"%s"C_RST" already declared", buffer);
 			return 1;
 		}
 		else {
-			item->opcode = ftell(state->fp_out);
+			item->opcode = 1;
+			item->content.i = ftell(state->fp_out);
 			return 0;
 		}
 	}
-	hash_item(state->labels, new_ht_item(ftell(state->fp_out), buffer, NULL));
+
+	item = new_ht_item(1, buffer, NULL);
+	item->content.i = ftell(state->fp_out);
+	hash_item(state->labels, item);
 	return 0;
 }
 
 void assemble(FILE *fp, struct asm_state *state) {
-	char buffer[7];
+	char buffer[16];
 	struct ht_item *ins;
 
 	while (fscanf(fp, "%s", buffer) > 0) {
@@ -92,8 +96,8 @@ int main(int argc, char *args[]) {
 	DECLARE_INSTRUCTION(26, "MUL", NULL);
 	DECLARE_INSTRUCTION(27, "DIV", NULL);
 	DECLARE_INSTRUCTION(28, "MOD", NULL);
-	DECLARE_INSTRUCTION(29, "JMP", kint);
-	DECLARE_INSTRUCTION(30, "JMPC", kint);
+	DECLARE_INSTRUCTION(29, "JMP", label);
+	DECLARE_INSTRUCTION(30, "JMPC", label);
 	DECLARE_INSTRUCTION(31, "CEQ", NULL);
 	DECLARE_INSTRUCTION(32, "CNE", NULL);
 	DECLARE_INSTRUCTION(33, "CGT", NULL);
