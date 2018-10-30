@@ -10,16 +10,15 @@
 	hash_item(state.ins, new_ht_item(opcode, label, body))
 
 char declare_label(FILE *fp, struct asm_state *state, char *buffer) {
-	if (lookup_item(state->labels, buffer)) {
-		printf("Label already declared\n");
-		return 0;
-	}
+	struct ht_item *item;
+	if (!lookup_item(state->labels, buffer))
+		goto new;
 
 	struct list_item *list = state->labels->list;
 	long p;
-
 	while (list) {
-		printf("item: label = %s, opcode = %i, addr = %i\n", list->item->label, list->item->opcode, list->item->addr);
+		printf("item: label = %s, opcode = %i, addr = %i\n",
+			list->item->label, list->item->opcode, list->item->addr);
 		if (list->item->opcode == 0) {
 			p = ftell(state->fp_out);
 			printf("ftell %ld\n", p);
@@ -32,7 +31,12 @@ char declare_label(FILE *fp, struct asm_state *state, char *buffer) {
 
 		list = list->next;
 	}
-	return 1;
+
+	
+new:
+	item = new_ht_item(1, buffer, NULL);
+	item->addr = (short) ftell(state->fp_out);
+	hash_item(state->labels, item);
 }
 
 void assemble(FILE *fp, struct asm_state *state) {

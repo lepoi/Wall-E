@@ -123,7 +123,7 @@ char label(FILE *fp, struct asm_state *state) {
 		return 0;
 	}
 
-	short addr = (short) item->addr;
+	short addr = item->addr - ftell(state->fp_out);
 	fwrite(&addr, sizeof(short), 1, state->fp_out);
 	return 0;
 }

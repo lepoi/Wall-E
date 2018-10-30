@@ -227,6 +227,8 @@ void check_exist(u16 id) {
 }
 
 void jump(FILE *fp, short addr) {
+	if (addr < 0)
+		addr -= 3;
 	fseek(fp, addr, SEEK_CUR);
 }
 
