@@ -17,14 +17,10 @@ char declare_label(FILE *fp, struct asm_state *state, char *buffer) {
 	struct list_item *list = state->labels->list;
 	long p;
 	while (list) {
-		printf("item: label = %s, opcode = %i, addr = %i\n",
-			list->item->label, list->item->opcode, list->item->addr);
 		if (list->item->opcode == 0) {
 			p = ftell(state->fp_out);
-			printf("ftell %ld\n", p);
 			fseek(state->fp_out, list->item->addr, SEEK_SET);
 			short diff = p - list->item->addr - 2;
-			printf("diff %i\n", diff);
 			fwrite(&diff, sizeof(short), 1, state->fp_out);
 			fseek(state->fp_out, p, SEEK_SET);
 		}

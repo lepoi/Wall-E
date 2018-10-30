@@ -545,7 +545,7 @@ void run(FILE *fp) {
 				struct vm_ht_item item = pop();
 
 				short address = get_short(fp);
-				if (to_int(item) != 0)
+				if (to_int(item) == 0)
 					jump(fp, address);
 			} break;
 
