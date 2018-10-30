@@ -15,6 +15,7 @@ struct list_item {
 struct ht_item {
 	char *label;
 	char opcode;
+	int addr;
 	char (*body)(FILE *, struct asm_state *);
 	void *next;
 };

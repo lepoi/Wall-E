@@ -207,6 +207,13 @@ u16 get_u16(FILE *fp) {
 	return n;
 }
 
+short get_short(FILE *fp) {
+	short n;
+	fread(&n, 2, 1, fp);
+
+	return n;
+}
+
 int get_int(FILE *fp) {
 	int n;
 	fread(&n, 4, 1, fp);
@@ -219,10 +226,8 @@ void check_exist(u16 id) {
 		error_exit("Redeclaration of variable");
 }
 
-void jump(FILE *fp, int address) {
-	if (address < 0)
-		address -= 5;
-	fseek(fp, address, SEEK_CUR);
+void jump(FILE *fp, short addr) {
+	fseek(fp, addr, SEEK_CUR);
 }
 
 struct vm_ht_item *new_vm_ht_item(u8 type) {
@@ -530,14 +535,14 @@ void run(FILE *fp) {
 			} break;
 
 			case JMP: {
-				int address = get_int(fp);
+				short address = get_short(fp);
 				jump(fp, address);
 			} break;
 
 			case JMPC: {
 				struct vm_ht_item item = pop();
 
-				int address = get_int(fp);
+				short address = get_short(fp);
 				if (to_int(item) != 0)
 					jump(fp, address);
 			} break;

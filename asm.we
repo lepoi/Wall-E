@@ -1,2 +1,3 @@
-PUSHKS "\nhola\n\n"
-WRT
+a:
+WRTLN
+JMP a

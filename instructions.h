@@ -114,13 +114,16 @@ char var(FILE *fp, struct asm_state *state) {
 char label(FILE *fp, struct asm_state *state) {
 	char *label_name = get_name(fp, state);	
 	struct ht_item *item = lookup_item(state->labels, label_name);
-	if (!item) {
+	if (!item || item->opcode == 0) {
 		struct ht_item *add = new_ht_item(0, label_name, NULL);
+		add->addr = ftell(state->fp_out);
 		hash_item(state->labels, add);
+		short addr = 0;
+		fwrite(&addr, sizeof(short), 1, state->fp_out);
 		return 0;
 	}
 
-	short addr = (short) item->opcode;
+	short addr = (short) item->addr;
 	fwrite(&addr, sizeof(short), 1, state->fp_out);
 	return 0;
 }

@@ -10,23 +10,29 @@
 	hash_item(state.ins, new_ht_item(opcode, label, body))
 
 char declare_label(FILE *fp, struct asm_state *state, char *buffer) {
-	struct ht_item *item = lookup_item(state->labels, buffer);
-	if (item) {
-		if (item->opcode == 1) {
-			error_log(state->line_number, "Label "C_BLU"%s"C_RST" already declared", buffer);
-			return 1;
-		}
-		else {
-			item->opcode = 1;
-			item->content.i = ftell(state->fp_out);
-			return 0;
-		}
+	if (lookup_item(state->labels, buffer)) {
+		printf("Label already declared\n");
+		return 0;
 	}
 
-	item = new_ht_item(1, buffer, NULL);
-	item->content.i = ftell(state->fp_out);
-	hash_item(state->labels, item);
-	return 0;
+	struct list_item *list = state->labels->list;
+	long p;
+
+	while (list) {
+		printf("item: label = %s, opcode = %i, addr = %i\n", list->item->label, list->item->opcode, list->item->addr);
+		if (list->item->opcode == 0) {
+			p = ftell(state->fp_out);
+			printf("ftell %ld\n", p);
+			fseek(state->fp_out, list->item->addr, SEEK_SET);
+			short diff = p - list->item->addr - 2;
+			printf("diff %i\n", diff);
+			fwrite(&diff, sizeof(short), 1, state->fp_out);
+			fseek(state->fp_out, p, SEEK_SET);
+		}
+
+		list = list->next;
+	}
+	return 1;
 }
 
 void assemble(FILE *fp, struct asm_state *state) {
@@ -130,20 +136,6 @@ int main(int argc, char *args[]) {
 
 	fwrite(MAGIC_NUMBER, sizeof(MAGIC_NUMBER) - 1, 1, state.fp_out);
 	assemble(fp, &state);
-
-	struct list_item *list = state.labels->list;
-	while (list) {
-		if (list->item->opcode == 0) {
-			// print label name and/or address
-			printf("Invalid label found\n");
-			error = 1;
-		}
-
-		if (error)
-			break;
-
-		list = list->next;
-	}
 
 	fclose(fp);
 	fclose(state.fp_out);
