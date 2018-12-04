@@ -93,7 +93,7 @@ char kstring(FILE *fp, struct asm_state *state) {
 		
 		wbuf[wi++] = c;
 	}
-	buf[wi] = '\0';
+	wbuf[wi] = '\0';
 	
 	fwrite(wbuf, strlen(wbuf) + 1, 1, state->fp_out);
 	return 0;

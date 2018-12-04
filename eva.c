@@ -161,7 +161,7 @@ struct string *get_string(FILE *fp) {
 
 	char buffer[MAX_STRING_SIZE];
 	char c;
-	u8 i = 0;
+	int i = 0;
 	while ((c = fgetc(fp)) != '\x00')
 		buffer[i++] = c;
 	buffer[i] = '\x00';
