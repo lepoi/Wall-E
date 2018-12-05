@@ -295,7 +295,6 @@ void run(FILE *fp) {
 				struct vm_ht_item *var = new_vm_ht_item(VINT);
 				var->id = id;
 				var->size = to_int(pop());
-				printf("size = %i\n", var->size);
 				var->content.vi = malloc(sizeof(int) * var->size);
 
 				vm_ht_add(ht, var);
