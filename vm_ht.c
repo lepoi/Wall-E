@@ -13,6 +13,7 @@ struct vm_ht *new_vm_ht(u8 bucket_size) {
 void vm_ht_add(struct vm_ht *ht, struct vm_ht_item *item) {
 	int index = item->id % ht->size;
 	struct vm_ht_item *stop = ht->items[index];
+	printf("id %i -> size %i\n", item->id, item->size);
 
 	if (!stop)
 		ht->items[index] = item;

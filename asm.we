@@ -1,18 +1,30 @@
-DCLI a
+DCLI i
+DCLI j
 PUSHKI 0
-POPI a
-
-START:
-PUSH a
+POPI i
+	for_l3c1_condition:
+PUSH i
 PUSHKI 10
-CLE
-JMPC END
-WRTS "Hola "
-WRTLN
+CLT
+JMPC for_l3c1_body
+JMP for_l3c1_exit
+	for_l3c1_callback:
+PUSH i
+PUSH i
 PUSHKI 1
-PUSH a
 ADD
-POPI a
-JMP START
-END:
+POPI i
+JMP for_l3c1_codition
+	for_l3c1_body:
+WRTS "Jumped to body!\n"
+PUSH i
+POPI j
+PUSH j
+
+WRT
+WRTLN
+
+JMP for_l3c1_callback
+	for_l3c1_exit:
+WRTS "Jumped to exit!\n"
 EXT

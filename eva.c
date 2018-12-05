@@ -295,6 +295,7 @@ void run(FILE *fp) {
 				struct vm_ht_item *var = new_vm_ht_item(VINT);
 				var->id = id;
 				var->size = to_int(pop());
+				printf("size = %i\n", var->size);
 				var->content.vi = malloc(sizeof(int) * var->size);
 
 				vm_ht_add(ht, var);
@@ -421,11 +422,12 @@ void run(FILE *fp) {
 
 			case POPVI: {
 				struct vm_ht_item *var = get_var(fp);
+				int content = to_int(pop());
 				int index = to_int(pop());
 				if (index > var->size)
-					error_exit("Index out of bounds");
+					error_exit("[POPVI] Index out of bounds");
 
-				var->content.vi[index] = to_int(pop());
+				var->content.vi[index] = content;
 			} break;
 
 			case POPVD: {
