@@ -431,29 +431,32 @@ void run(FILE *fp) {
 
 			case POPVD: {
 				struct vm_ht_item *var = get_var(fp);
+				double content = to_double(pop());
 				int index = to_int(pop());
 				if (index >= var->size)
 					error_exit("Index out of bounds");
 
-				var->content.vd[index] = to_double(pop());
+				var->content.vd[index] = content;
 			} break;
 
 			case POPVC: {
 				struct vm_ht_item *var = get_var(fp);
+				char content = to_char(pop());
 				int index = to_int(pop());
 				if (index >= var->size)
 					error_exit("Index out of bounds");
 
-				var->content.vc[index] = to_char(pop());
+				var->content.vc[index] = content;
 			} break;
 
 			case POPVS: {
 				struct vm_ht_item *var = get_var(fp);
+				struct string *content = to_string(pop());
 				int index = to_int(pop());
 				if (index >= var->size)
 					error_exit("Index out of bounds");
 
-				var->content.vs[index] = to_string(pop());
+				var->content.vs[index] = content;
 			} break;
 
 			case ADD: {
