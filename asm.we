@@ -1,30 +1,20 @@
-DCLI i
-DCLI j
-PUSHKI 0
-POPI i
-	for_l3c1_condition:
-PUSH i
-PUSHKI 10
-CLT
-JMPC for_l3c1_body
-JMP for_l3c1_exit
-	for_l3c1_callback:
-PUSH i
-PUSH i
-PUSHKI 1
-ADD
-POPI i
-JMP for_l3c1_codition
-	for_l3c1_body:
-WRTS "Jumped to body!\n"
-PUSH i
-POPI j
-PUSH j
-
+DCLI a
+PUSHKI 2
+POPI a
+DCLI b
+PUSHKI 4
+POPI b
+PUSH a
+PUSHKI 2
+CEQ
+JMPC 0
+PUSH b
+PUSHKI 2
+CEQ
+JMPC 1
+PUSHKS "Nice\n"
 WRT
-WRTLN
-
-JMP for_l3c1_callback
-	for_l3c1_exit:
-WRTS "Jumped to exit!\n"
-EXT
+1:
+PUSHKS "Below\n"
+WRT
+0:

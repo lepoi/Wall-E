@@ -63,9 +63,10 @@
 struct vm_ht_item stack[MAX_STACK_SIZE];
 u8 stack_size;
 struct vm_ht *ht;
+int line = 00;
 
 void error_exit(const char *msg) {
-	printf("[ERROR] %s\n", msg);
+	printf("[ERROR] [%i] %s\n", line, msg);
 	exit(1);
 }
 
@@ -242,10 +243,11 @@ struct vm_ht_item *new_vm_ht_item(u8 type) {
 void run(FILE *fp) {
 	char c;
 	while ((c = fgetc(fp)) != EOF) {
+		line++;
 		switch (c) {
-			case EXT: exit(0); break;
+			case EXT: printf("[VM] Exit\n"); exit(0); break;
 
-			default: printf("default at: %lu -> [%x]\n", ftell(fp), c); break;
+			default: printf("default at line: %i -> [%x]\n", line++, c); break;
 
 			case DCLI: {
 				u16 id = get_u16(fp);
@@ -549,8 +551,9 @@ void run(FILE *fp) {
 				struct vm_ht_item item = pop();
 
 				short address = get_short(fp);
-				if (to_int(item) == 0)
+				if (to_int(item) == 0) {
 					jump(fp, address);
+				}
 			} break;
 
 			case CEQ: {

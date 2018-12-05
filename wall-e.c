@@ -21,6 +21,7 @@ char declare_label(FILE *fp, struct asm_state *state, char *buffer) {
 			p = ftell(state->fp_out);
 			fseek(state->fp_out, list->item->addr, SEEK_SET);
 			short diff = p - list->item->addr - 2;
+			printf("label %s jump to: %i\n", list->item->label, list->item->addr);
 			fwrite(&diff, sizeof(short), 1, state->fp_out);
 			fseek(state->fp_out, p, SEEK_SET);
 		}
@@ -136,6 +137,15 @@ int main(int argc, char *args[]) {
 
 	fwrite(MAGIC_NUMBER, sizeof(MAGIC_NUMBER) - 1, 1, state.fp_out);
 	assemble(fp, &state);
+
+	struct list_item *list = state.labels->list;
+	while (list) {
+		if (list->item) {
+			printf("label %s === %i\n", list->item->label, list->item->addr);
+		}
+
+		list = list->next;	
+	}
 
 	fclose(fp);
 	fclose(state.fp_out);

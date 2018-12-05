@@ -83,7 +83,10 @@ struct ht_item *new_ht_item(char opcode, const char *label, void *body) {
 }
 
 unsigned short rm_ht_item(struct hashtable *ht, char *str) {
+	printf("str: %s\n", str);
+	fflush(stdout);
 	struct ht_item *item = ht->items[hash(str) % ht->size];
+	if (!item) return 1;
 
 	if (strcmp(item->label, str) == 0) {
 		ht->items[hash(str) % ht->size] = item->next;
@@ -127,15 +130,29 @@ void hash_item(struct hashtable *ht, struct ht_item *item) {
 	unsigned int index = hash(item->label) % ht->size;
 	struct ht_item *stop = ht->items[index];
 
-	if (!stop)
+	if (!stop) {
+		
 		ht->items[index] = item;
+	}
 	else {
-		while (stop->next)
+		if (strcmp(stop->label, item->label) == 0) {
+			stop->addr = item->addr;
+			rm_list_item(ht, stop);
+			goto next;
+		}
+		while (stop->next) {
+			if (strcmp(stop->label, item->label) == 0) {
+				stop->addr = item->addr;
+				rm_list_item(ht, stop);
+				goto next;
+			}
 			stop = stop->next;
+		}
 
 		stop->next = item;
 	}
 
+next:
 	ht->count++;
 	add_list_item(ht, item);
 }

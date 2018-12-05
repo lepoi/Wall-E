@@ -117,12 +117,14 @@ char label(FILE *fp, struct asm_state *state) {
 	if (!item || item->opcode == 0) {
 		struct ht_item *add = new_ht_item(0, label_name, NULL);
 		add->addr = ftell(state->fp_out);
+		rm_ht_item(state->labels, label_name);
 		hash_item(state->labels, add);
 		short addr = 0;
 		fwrite(&addr, sizeof(short), 1, state->fp_out);
 		return 0;
 	}
 
+	printf("label %s jump to: %i\n", item->label, item->addr);
 	short addr = item->addr - ftell(state->fp_out);
 	fwrite(&addr, sizeof(short), 1, state->fp_out);
 	return 0;
