@@ -348,7 +348,7 @@ void run(FILE *fp) {
 			case PUSHV: {
 				struct vm_ht_item *var = get_var(fp);
 				int index = to_int(pop());
-				if (index > var->size)
+				if (index >= var->size)
 					error_exit("[PUSHV] Index out of bounds");
 
 				struct vm_ht_item *item = new_vm_ht_item(var->type - 4);	
@@ -423,7 +423,7 @@ void run(FILE *fp) {
 				struct vm_ht_item *var = get_var(fp);
 				int content = to_int(pop());
 				int index = to_int(pop());
-				if (index > var->size)
+				if (index >= var->size)
 					error_exit("[POPVI] Index out of bounds");
 
 				var->content.vi[index] = content;
@@ -432,7 +432,7 @@ void run(FILE *fp) {
 			case POPVD: {
 				struct vm_ht_item *var = get_var(fp);
 				int index = to_int(pop());
-				if (index > var->size)
+				if (index >= var->size)
 					error_exit("Index out of bounds");
 
 				var->content.vd[index] = to_double(pop());
@@ -441,7 +441,7 @@ void run(FILE *fp) {
 			case POPVC: {
 				struct vm_ht_item *var = get_var(fp);
 				int index = to_int(pop());
-				if (index > var->size)
+				if (index >= var->size)
 					error_exit("Index out of bounds");
 
 				var->content.vc[index] = to_char(pop());
@@ -450,7 +450,7 @@ void run(FILE *fp) {
 			case POPVS: {
 				struct vm_ht_item *var = get_var(fp);
 				int index = to_int(pop());
-				if (index > var->size)
+				if (index >= var->size)
 					error_exit("Index out of bounds");
 
 				var->content.vs[index] = to_string(pop());
